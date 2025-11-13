@@ -1,0 +1,137 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check, Sparkles, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
+
+const Pricing = () => {
+  const features = [
+    "Correção ilimitada de redações com IA",
+    "Chat inteligente para tirar dúvidas",
+    "Acesso a todos os simulados oficiais",
+    "Estudo de todas as matérias do ENEM",
+    "Dicas e estratégias exclusivas",
+    "Acompanhamento de desempenho",
+    "Suporte prioritário",
+    "Atualizações constantes de conteúdo"
+  ];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      {/* Header */}
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container px-4 py-4">
+          <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar
+          </Link>
+        </div>
+      </header>
+
+      <div className="container px-4 py-12 md:py-20">
+        <div className="max-w-4xl mx-auto">
+          {/* Header Section */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-6">
+              <Sparkles className="w-4 h-4" />
+              <span className="text-sm font-medium">Oferta Especial</span>
+            </div>
+            
+            <h1 className="text-4xl md:text-6xl font-bold mb-4">
+              Conquiste sua aprovação no ENEM
+            </h1>
+            
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Tenha acesso completo à plataforma de estudos com inteligência artificial
+            </p>
+          </div>
+
+          {/* Pricing Card */}
+          <Card className="border-2 border-primary/20 shadow-2xl max-w-2xl mx-auto">
+            <CardHeader className="text-center pb-8 pt-8">
+              <div className="inline-flex items-center justify-center gap-2 mb-4">
+                <Sparkles className="w-6 h-6 text-primary" />
+                <CardTitle className="text-2xl">Plano Completo AprovI.A</CardTitle>
+              </div>
+              <CardDescription className="text-lg">
+                Acesso ilimitado a todas as funcionalidades
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="space-y-8">
+              {/* Price */}
+              <div className="text-center py-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg">
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl md:text-7xl font-bold text-primary">R$ 19,99</span>
+                  <span className="text-2xl text-muted-foreground">/mês</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Cancele quando quiser
+                </p>
+              </div>
+
+              {/* Features List */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">O que está incluído:</h3>
+                <div className="grid gap-3">
+                  {features.map((feature, index) => (
+                    <div key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Check className="w-3 h-3 text-primary" />
+                      </div>
+                      <span className="text-foreground">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <div className="space-y-4 pt-4">
+                <Button 
+                  size="lg" 
+                  className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                >
+                  Começar Agora
+                  <Sparkles className="ml-2 h-5 w-5" />
+                </Button>
+                
+                <p className="text-center text-sm text-muted-foreground">
+                  ✓ Sem cartão de crédito para testar  ✓ Acesso imediato  ✓ Garantia de 7 dias
+                </p>
+              </div>
+
+              {/* Trust Badges */}
+              <div className="pt-6 border-t">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-primary">+5000</div>
+                    <div className="text-xs text-muted-foreground">Estudantes</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-primary">4.9★</div>
+                    <div className="text-xs text-muted-foreground">Avaliação</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-primary">85%</div>
+                    <div className="text-xs text-muted-foreground">Aprovação</div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* FAQ Section */}
+          <div className="mt-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              Tem alguma dúvida? Entre em contato conosco
+            </p>
+            <Link to="/" className="text-primary hover:underline">
+              Voltar para a página inicial
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Pricing;
