@@ -89,9 +89,12 @@ const Pricing = () => {
                 <Button 
                   size="lg" 
                   className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                  asChild
                 >
-                  Começar Agora
-                  <Sparkles className="ml-2 h-5 w-5" />
+                  <a href="https://pay.cakto.com.br/dtr9gb3_648098" target="_blank" rel="noopener noreferrer">
+                    Começar Agora
+                    <Sparkles className="ml-2 h-5 w-5" />
+                  </a>
                 </Button>
                 
                 <p className="text-center text-sm text-muted-foreground">
