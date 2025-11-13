@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PenTool, MessageSquare, FileText, BookOpen, Lightbulb, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const features = [
   {
@@ -84,8 +85,10 @@ const Features = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <Button variant="ghost" className="w-full group-hover:bg-primary/5">
-                    {feature.cta} →
+                  <Button variant="ghost" className="w-full group-hover:bg-primary/5" asChild>
+                    <Link to="/pricing">
+                      {feature.cta} →
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
