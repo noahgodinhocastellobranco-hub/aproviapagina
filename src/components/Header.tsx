@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, ExternalLink, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -75,6 +75,29 @@ const Header = () => {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Você perderá o acesso ao aplicativo.")) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase.functions.invoke("cancel-subscription");
+      
+      if (error) {
+        toast.error("Erro ao cancelar assinatura");
+        console.error("Erro:", error);
+        return;
+      }
+
+      toast.success("Assinatura cancelada com sucesso");
+      setHasSubscription(false);
+      navigate("/pricing");
+    } catch (error) {
+      console.error("Erro ao cancelar assinatura:", error);
+      toast.error("Erro ao cancelar assinatura");
+    }
+  };
+
   if (!user) {
     return (
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -89,10 +112,36 @@ const Header = () => {
 
   return (
     <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container px-4 py-4 flex justify-end items-center gap-4">
+      <div className="container px-4 py-4 flex justify-end items-center gap-3">
         <span className="text-sm text-muted-foreground hidden sm:inline">
           {user.email}
         </span>
+        
+        {hasSubscription && (
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="gap-2"
+            asChild
+          >
+            <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="w-4 h-4" />
+              Acessar Aplicativo
+            </a>
+          </Button>
+        )}
+
+        {hasSubscription && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            className="gap-2"
+            onClick={handleCancelSubscription}
+          >
+            <X className="w-4 h-4" />
+            Cancelar Assinatura
+          </Button>
+        )}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -104,13 +153,17 @@ const Header = () => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/pricing" className="cursor-pointer">
-                <Settings className="w-4 h-4 mr-2" />
-                {hasSubscription ? "Gerenciar Plano" : "Assinar Plano"}
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {!hasSubscription && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link to="/pricing" className="cursor-pointer">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Assinar Plano
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
               Sair
