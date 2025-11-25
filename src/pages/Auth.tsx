@@ -21,17 +21,43 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Verifica se o usuário já está logado
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkUserAndRedirect = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/pricing");
+        // Verificar se é admin
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .single();
+        
+        if (roleData) {
+          navigate("/admin");
+        } else {
+          navigate("/pricing");
+        }
       }
-    });
+    };
+
+    checkUserAndRedirect();
 
     // Escuta mudanças no estado de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
-        navigate("/pricing");
+        // Verificar se é admin
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .eq("role", "admin")
+          .single();
+        
+        if (roleData) {
+          navigate("/admin");
+        } else {
+          navigate("/pricing");
+        }
       }
     });
 
