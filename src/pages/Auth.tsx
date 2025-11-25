@@ -68,7 +68,7 @@ const Auth = () => {
 
           console.log("Status da assinatura:", subData);
           
-          if (subData?.subscribed) {
+          if (subData?.hasSubscription) {
             console.log("Assinatura ativa, redirecionando para app");
             window.location.href = "https://aprovia.lovable.app";
           } else {
@@ -78,6 +78,7 @@ const Auth = () => {
         }
       } catch (error) {
         console.error("Erro no checkUserAndRedirect:", error);
+        navigate("/pricing");
       }
     };
 
@@ -113,21 +114,25 @@ const Auth = () => {
           
           if (subError) {
             console.error("Erro ao verificar assinatura:", subError);
+            setIsLoading(false);
             navigate("/pricing");
             return;
           }
 
           console.log("Status da assinatura:", subData);
           
-          if (subData?.subscribed) {
+          if (subData?.hasSubscription) {
             console.log("Assinatura ativa, redirecionando para app");
             window.location.href = "https://aprovia.lovable.app";
           } else {
             console.log("Sem assinatura, redirecionando para /pricing");
+            setIsLoading(false);
             navigate("/pricing");
           }
         } catch (error) {
           console.error("Erro no onAuthStateChange:", error);
+          setIsLoading(false);
+          navigate("/pricing");
         }
       }
     });
@@ -169,6 +174,7 @@ const Auth = () => {
 
         if (error) throw error;
         toast.success("Login realizado com sucesso!");
+        // Não precisa setar isLoading(false) aqui porque o onAuthStateChange vai redirecionar
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -183,8 +189,10 @@ const Auth = () => {
 
         if (error) throw error;
         toast.success("Conta criada! Redirecionando para os planos...");
+        // Não precisa setar isLoading(false) aqui porque o onAuthStateChange vai redirecionar
       }
     } catch (error: any) {
+      setIsLoading(false); // Importante: setar false em caso de erro
       if (error.message.includes("User already registered")) {
         toast.error("Este email já está cadastrado. Faça login.");
         setIsLogin(true);
@@ -193,8 +201,6 @@ const Auth = () => {
       } else {
         toast.error(error.message || "Erro ao processar autenticação");
       }
-    } finally {
-      setIsLoading(false);
     }
   };
 
