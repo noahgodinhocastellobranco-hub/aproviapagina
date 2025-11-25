@@ -25,31 +25,57 @@ const Auth = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          console.log("Verificando role do usuário:", session.user.id);
-          // Verificar se é admin - usar maybeSingle() ao invés de single()
-          const { data: roleData, error } = await supabase
+          console.log("Verificando role do usuário:", session.user.id, session.user.email);
+          
+          // Primeiro verificar se é admin
+          const { data: roleData, error: roleError } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id)
             .eq("role", "admin")
             .maybeSingle();
           
-          if (error) {
-            console.error("Erro ao verificar role:", error);
+          if (roleError) {
+            console.error("Erro ao verificar role:", roleError);
           }
           
           console.log("Role data:", roleData);
           
-          if (roleData) {
-            console.log("Redirecionando para /admin");
+          // Se for admin, redireciona para /admin
+          if (roleData && roleData.role === "admin") {
+            console.log("Usuário é admin - redirecionando para /admin");
             navigate("/admin");
+            return;
+          }
+          
+          // Se não for admin, verificar assinatura
+          console.log("Usuário não é admin - verificando assinatura");
+          const { data: subData, error: subError } = await supabase.functions.invoke("check-subscription", {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          
+          if (subError) {
+            console.error("Erro ao verificar assinatura:", subError);
+            navigate("/pricing");
+            return;
+          }
+          
+          console.log("Dados da assinatura:", subData);
+          
+          // Se tem assinatura ativa, redireciona para home
+          if (subData?.hasSubscription) {
+            console.log("Usuário tem assinatura ativa - redirecionando para /");
+            navigate("/");
           } else {
-            console.log("Redirecionando para /pricing");
+            console.log("Usuário sem assinatura - redirecionando para /pricing");
             navigate("/pricing");
           }
         }
       } catch (error) {
         console.error("Erro no checkUserAndRedirect:", error);
+        navigate("/pricing");
       }
     };
 
@@ -59,30 +85,56 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session && event === 'SIGNED_IN') {
         try {
-          console.log("Auth state changed - Verificando role:", session.user.id);
-          // Verificar se é admin - usar maybeSingle() ao invés de single()
-          const { data: roleData, error } = await supabase
+          console.log("Auth state changed - Verificando role:", session.user.id, session.user.email);
+          
+          // Primeiro verificar se é admin
+          const { data: roleData, error: roleError } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id)
             .eq("role", "admin")
             .maybeSingle();
           
-          if (error) {
-            console.error("Erro ao verificar role no auth change:", error);
+          if (roleError) {
+            console.error("Erro ao verificar role no auth change:", roleError);
           }
           
           console.log("Role data no auth change:", roleData);
           
-          if (roleData) {
-            console.log("Redirecionando para /admin");
+          // Se for admin, redireciona para /admin
+          if (roleData && roleData.role === "admin") {
+            console.log("Usuário é admin - redirecionando para /admin");
             navigate("/admin");
+            return;
+          }
+          
+          // Se não for admin, verificar assinatura
+          console.log("Usuário não é admin - verificando assinatura");
+          const { data: subData, error: subError } = await supabase.functions.invoke("check-subscription", {
+            headers: {
+              Authorization: `Bearer ${session.access_token}`
+            }
+          });
+          
+          if (subError) {
+            console.error("Erro ao verificar assinatura:", subError);
+            navigate("/pricing");
+            return;
+          }
+          
+          console.log("Dados da assinatura:", subData);
+          
+          // Se tem assinatura ativa, redireciona para home
+          if (subData?.hasSubscription) {
+            console.log("Usuário tem assinatura ativa - redirecionando para /");
+            navigate("/");
           } else {
-            console.log("Redirecionando para /pricing");
+            console.log("Usuário sem assinatura - redirecionando para /pricing");
             navigate("/pricing");
           }
         } catch (error) {
           console.error("Erro no onAuthStateChange:", error);
+          navigate("/pricing");
         }
       }
     });
