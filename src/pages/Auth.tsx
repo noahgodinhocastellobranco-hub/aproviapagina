@@ -25,26 +25,43 @@ const Auth = () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
-          console.log("Verificando role do usuário:", session.user.id);
-          // Verificar se é admin - usar maybeSingle() ao invés de single()
-          const { data: roleData, error } = await supabase
+          console.log("Verificando usuário:", session.user.id);
+          
+          // Verificar se é admin
+          const { data: roleData, error: roleError } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id)
             .eq("role", "admin")
             .maybeSingle();
           
-          if (error) {
-            console.error("Erro ao verificar role:", error);
+          if (roleError) {
+            console.error("Erro ao verificar role:", roleError);
           }
           
-          console.log("Role data:", roleData);
-          
           if (roleData) {
-            console.log("Redirecionando para /admin");
+            console.log("Admin detectado, redirecionando para /admin");
             navigate("/admin");
+            return;
+          }
+
+          // Se não é admin, verificar assinatura
+          console.log("Verificando assinatura do usuário");
+          const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription');
+          
+          if (subError) {
+            console.error("Erro ao verificar assinatura:", subError);
+            navigate("/pricing");
+            return;
+          }
+
+          console.log("Status da assinatura:", subData);
+          
+          if (subData?.subscribed) {
+            console.log("Assinatura ativa, redirecionando para app");
+            window.location.href = "https://aprovia.lovable.app";
           } else {
-            console.log("Redirecionando para /pricing");
+            console.log("Sem assinatura, redirecionando para /pricing");
             navigate("/pricing");
           }
         }
@@ -59,26 +76,43 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session && event === 'SIGNED_IN') {
         try {
-          console.log("Auth state changed - Verificando role:", session.user.id);
-          // Verificar se é admin - usar maybeSingle() ao invés de single()
-          const { data: roleData, error } = await supabase
+          console.log("Auth state changed:", session.user.id);
+          
+          // Verificar se é admin
+          const { data: roleData, error: roleError } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", session.user.id)
             .eq("role", "admin")
             .maybeSingle();
           
-          if (error) {
-            console.error("Erro ao verificar role no auth change:", error);
+          if (roleError) {
+            console.error("Erro ao verificar role:", roleError);
           }
           
-          console.log("Role data no auth change:", roleData);
-          
           if (roleData) {
-            console.log("Redirecionando para /admin");
+            console.log("Admin detectado, redirecionando para /admin");
             navigate("/admin");
+            return;
+          }
+
+          // Se não é admin, verificar assinatura
+          console.log("Verificando assinatura");
+          const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription');
+          
+          if (subError) {
+            console.error("Erro ao verificar assinatura:", subError);
+            navigate("/pricing");
+            return;
+          }
+
+          console.log("Status da assinatura:", subData);
+          
+          if (subData?.subscribed) {
+            console.log("Assinatura ativa, redirecionando para app");
+            window.location.href = "https://aprovia.lovable.app";
           } else {
-            console.log("Redirecionando para /pricing");
+            console.log("Sem assinatura, redirecionando para /pricing");
             navigate("/pricing");
           }
         } catch (error) {
