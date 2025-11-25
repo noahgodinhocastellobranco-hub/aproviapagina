@@ -38,19 +38,17 @@ const Auth = () => {
         if (session) {
           console.log("Verificando usuário:", session.user.id);
           
-          // Verificar se é admin
-          const { data: roleData, error: roleError } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .eq("role", "admin")
-            .maybeSingle();
+          // Verificar se é admin usando a função RPC
+          const { data: isAdminData, error: adminError } = await supabase.rpc('has_role', {
+            _user_id: session.user.id,
+            _role: 'admin'
+          });
           
-          if (roleError) {
-            console.error("Erro ao verificar role:", roleError);
+          if (adminError) {
+            console.error("Erro ao verificar role:", adminError);
           }
           
-          if (roleData) {
+          if (isAdminData) {
             console.log("Admin detectado, redirecionando para /admin");
             navigate("/admin");
             return;
@@ -86,24 +84,25 @@ const Auth = () => {
 
     // Escuta mudanças no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session && event === 'SIGNED_IN') {
+      console.log("Auth event:", event, "Session:", session?.user?.id);
+      
+      if (session) {
         try {
           console.log("Auth state changed:", session.user.id);
           
-          // Verificar se é admin
-          const { data: roleData, error: roleError } = await supabase
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", session.user.id)
-            .eq("role", "admin")
-            .maybeSingle();
+          // Verificar se é admin usando a função RPC
+          const { data: isAdminData, error: adminError } = await supabase.rpc('has_role', {
+            _user_id: session.user.id,
+            _role: 'admin'
+          });
           
-          if (roleError) {
-            console.error("Erro ao verificar role:", roleError);
+          if (adminError) {
+            console.error("Erro ao verificar role:", adminError);
           }
           
-          if (roleData) {
+          if (isAdminData) {
             console.log("Admin detectado, redirecionando para /admin");
+            setIsLoading(false);
             navigate("/admin");
             return;
           }
