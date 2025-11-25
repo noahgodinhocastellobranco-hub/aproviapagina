@@ -1,16 +1,83 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Sparkles, ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
+  const [hasSubscription, setHasSubscription] = useState(false);
   const [email, setEmail] = useState("");
+  const [user, setUser] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    checkAuthAndSubscription();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        setEmail(session.user.email || "");
+        checkSubscription();
+      } else {
+        setUser(null);
+        setHasSubscription(false);
+        setIsCheckingSubscription(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkAuthAndSubscription = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      setUser(session.user);
+      setEmail(session.user.email || "");
+      await checkSubscription();
+    } else {
+      setIsCheckingSubscription(false);
+    }
+  };
+
+  const checkSubscription = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setIsCheckingSubscription(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("check-subscription");
+      
+      if (error) throw error;
+
+      if (data?.hasSubscription) {
+        setHasSubscription(true);
+        toast.success("Você já tem um plano ativo!");
+      }
+    } catch (error) {
+      console.error("Erro ao verificar assinatura:", error);
+    } finally {
+      setIsCheckingSubscription(false);
+    }
+  };
 
   const handleCheckout = async () => {
+    if (!user) {
+      toast.error("Você precisa estar logado para assinar");
+      navigate("/auth");
+      return;
+    }
+
+    if (hasSubscription) {
+      toast.info("Você já possui um plano ativo!");
+      return;
+    }
+
     if (!email || !email.includes("@")) {
       toast.error("Por favor, insira um email válido");
       return;
@@ -117,28 +184,74 @@ const Pricing = () => {
 
               {/* CTA Button */}
               <div className="space-y-4 pt-4">
-                <div className="space-y-3">
-                  <input
-                    type="email"
-                    placeholder="Seu melhor email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <Button 
-                    size="lg" 
-                    className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-                    onClick={handleCheckout}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Processando..." : "Começar Agora"}
-                    {!isLoading && <Sparkles className="ml-2 h-5 w-5" />}
-                  </Button>
-                </div>
+                {isCheckingSubscription ? (
+                  <div className="text-center py-6">
+                    <p className="text-muted-foreground">Verificando seu plano...</p>
+                  </div>
+                ) : hasSubscription ? (
+                  <div className="space-y-3">
+                    <div className="bg-accent/10 border border-accent rounded-lg p-6 text-center">
+                      <Check className="w-12 h-12 text-accent mx-auto mb-3" />
+                      <h3 className="text-xl font-semibold text-accent mb-2">
+                        Plano Ativo!
+                      </h3>
+                      <p className="text-muted-foreground">
+                        Você já possui acesso completo à plataforma
+                      </p>
+                    </div>
+                    <Button 
+                      size="lg" 
+                      variant="outline"
+                      className="w-full text-lg py-6"
+                      asChild
+                    >
+                      <Link to="/">
+                        Voltar para Home
+                      </Link>
+                    </Button>
+                  </div>
+                ) : !user ? (
+                  <div className="space-y-3">
+                    <p className="text-center text-muted-foreground mb-4">
+                      Faça login ou crie uma conta para continuar
+                    </p>
+                    <Button 
+                      size="lg" 
+                      className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                      asChild
+                    >
+                      <Link to="/auth">
+                        Login / Criar Conta
+                        <Sparkles className="ml-2 h-5 w-5" />
+                      </Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <input
+                      type="email"
+                      placeholder="Seu melhor email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <Button 
+                      size="lg" 
+                      className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                      onClick={handleCheckout}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Processando..." : "Começar Agora"}
+                      {!isLoading && <Sparkles className="ml-2 h-5 w-5" />}
+                    </Button>
+                  </div>
+                )}
                 
-                <p className="text-center text-sm text-muted-foreground">
-                  ✓ Sem cartão de crédito para testar  ✓ Acesso imediato  ✓ Garantia de 7 dias
-                </p>
+                {!hasSubscription && (
+                  <p className="text-center text-sm text-muted-foreground">
+                    ✓ Sem cartão de crédito para testar  ✓ Acesso imediato  ✓ Garantia de 7 dias
+                  </p>
+                )}
               </div>
 
               {/* Trust Badges */}
