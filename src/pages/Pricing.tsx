@@ -2,8 +2,39 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Sparkles, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const Pricing = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState("");
+
+  const handleCheckout = async () => {
+    if (!email || !email.includes("@")) {
+      toast.error("Por favor, insira um email válido");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { email },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (error) {
+      console.error("Erro ao criar checkout:", error);
+      toast.error("Erro ao processar pagamento. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const features = [
     "Correção ilimitada de redações com IA",
     "Chat inteligente para tirar dúvidas",
@@ -86,13 +117,24 @@ const Pricing = () => {
 
               {/* CTA Button */}
               <div className="space-y-4 pt-4">
-                <Button 
-                  size="lg" 
-                  className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-                >
-                  Começar Agora
-                  <Sparkles className="ml-2 h-5 w-5" />
-                </Button>
+                <div className="space-y-3">
+                  <input
+                    type="email"
+                    placeholder="Seu melhor email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <Button 
+                    size="lg" 
+                    className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+                    onClick={handleCheckout}
+                    disabled={isLoading}
+                  >
+                    {isLoading ? "Processando..." : "Começar Agora"}
+                    {!isLoading && <Sparkles className="ml-2 h-5 w-5" />}
+                  </Button>
+                </div>
                 
                 <p className="text-center text-sm text-muted-foreground">
                   ✓ Sem cartão de crédito para testar  ✓ Acesso imediato  ✓ Garantia de 7 dias
