@@ -70,13 +70,31 @@ serve(async (req) => {
 
     if (hasActiveSubscription) {
       console.log("Assinatura ativa encontrada:", subscriptions.data[0].id);
+      
+      const subscription = subscriptions.data[0];
+      const periodEnd = subscription.current_period_end;
+      
+      let subscriptionEnd = null;
+      if (periodEnd && typeof periodEnd === 'number') {
+        try {
+          subscriptionEnd = new Date(periodEnd * 1000).toISOString();
+        } catch (e) {
+          console.log("Erro ao converter data, usando null");
+        }
+      }
+
+      return new Response(JSON.stringify({ 
+        hasSubscription: true,
+        subscriptionEnd
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     return new Response(JSON.stringify({ 
-      hasSubscription: hasActiveSubscription,
-      subscriptionEnd: hasActiveSubscription 
-        ? new Date(subscriptions.data[0].current_period_end * 1000).toISOString()
-        : null
+      hasSubscription: false,
+      subscriptionEnd: null
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
