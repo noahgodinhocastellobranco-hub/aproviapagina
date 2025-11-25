@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings, ExternalLink, X } from "lucide-react";
+import { LogOut, User, Settings, ExternalLink, X, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import {
 const Header = () => {
   const [user, setUser] = useState<any>(null);
   const [hasSubscription, setHasSubscription] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
   const navigate = useNavigate();
 
@@ -41,8 +42,24 @@ const Header = () => {
     if (session?.user) {
       setUser(session.user);
       await checkSubscription();
+      await checkAdminRole(session.user.id);
     } else {
       setIsChecking(false);
+    }
+  };
+
+  const checkAdminRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin'
+      });
+      
+      if (!error) {
+        setIsAdmin(data || false);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar role de admin:", error);
     }
   };
 
@@ -153,6 +170,17 @@ const Header = () => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
             <DropdownMenuSeparator />
+            {isAdmin && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link to="/admin" className="cursor-pointer">
+                    <LayoutDashboard className="w-4 h-4 mr-2" />
+                    Acessar Painel
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {!hasSubscription && (
               <>
                 <DropdownMenuItem asChild>
