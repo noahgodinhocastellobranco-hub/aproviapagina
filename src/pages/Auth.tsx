@@ -6,10 +6,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { Brain, Sparkles } from "lucide-react";
+import { z } from "zod";
+
+const emailSchema = z.string().trim().email({ message: "Email inválido" });
+const passwordSchema = z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" });
+const nameSchema = z.string().trim().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }).max(100, { message: "Nome muito longo" });
 
 const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,14 +41,24 @@ const Auth = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email || !password) {
+    // Validação de campos vazios
+    if (!email || !password || (!isLogin && !fullName)) {
       toast.error("Por favor, preencha todos os campos");
       return;
     }
 
-    if (password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
-      return;
+    // Validação com zod
+    try {
+      emailSchema.parse(email);
+      passwordSchema.parse(password);
+      if (!isLogin) {
+        nameSchema.parse(fullName);
+      }
+    } catch (error: any) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -62,6 +78,9 @@ const Auth = () => {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/pricing`,
+            data: {
+              full_name: fullName,
+            },
           },
         });
 
@@ -104,6 +123,23 @@ const Auth = () => {
         
         <CardContent>
           <form onSubmit={handleAuth} className="space-y-4">
+            {!isLogin && (
+              <div className="space-y-2">
+                <label htmlFor="fullName" className="text-sm font-medium">
+                  Nome Completo
+                </label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  placeholder="Seu nome completo"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  disabled={isLoading}
+                  required={!isLogin}
+                />
+              </div>
+            )}
+            
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
                 Email
