@@ -42,8 +42,8 @@ const Hero = () => {
               </Link>
             </Button>
             <Button size="lg" variant="outline" className="text-lg px-8 py-6" asChild>
-              <Link to="/pricing">
-                Praticar Redação
+              <Link to="/auth">
+                Login / Criar Conta
               </Link>
             </Button>
           </div>
