@@ -15,25 +15,35 @@ serve(async (req) => {
   try {
     console.log("[ADMIN-DASHBOARD] Function started");
 
-    // Criar cliente Supabase com service role key para acesso total
+    // Cliente com ANON_KEY para validar o token do usuário
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      {
+        global: {
+          headers: { Authorization: req.headers.get("Authorization")! },
+        },
+      }
+    );
+
+    // Cliente com SERVICE_ROLE_KEY para operações administrativas
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
     );
 
-    // Verificar autenticação do usuário
+    // Verificar autenticação do usuário com o cliente ANON
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       console.log("[ADMIN-DASHBOARD] No authorization header");
       throw new Error("Não autorizado");
     }
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser();
     
     if (userError || !userData.user) {
-      console.log("[ADMIN-DASHBOARD] User authentication failed");
+      console.log("[ADMIN-DASHBOARD] User authentication failed:", userError?.message);
       throw new Error("Não autorizado");
     }
 
