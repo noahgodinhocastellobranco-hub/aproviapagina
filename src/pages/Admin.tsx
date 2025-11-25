@@ -47,12 +47,14 @@ const Admin = () => {
 
   const checkAdminAndFetchData = async () => {
     try {
+      console.log("🔍 Verificando sessão e permissões de admin...");
+      
       // Verificar autenticação
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
       // Se há erro na sessão ou não há sessão, redirecionar para auth
       if (sessionError || !session) {
-        console.log("Sessão inválida ou expirada");
+        console.log("❌ Sessão inválida ou expirada");
         if (sessionError) {
           await supabase.auth.signOut();
         }
@@ -61,34 +63,46 @@ const Admin = () => {
         return;
       }
 
-      // Verificar se é admin
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", session.user.id)
-        .eq("role", "admin")
-        .single();
+      console.log("✅ Sessão válida. User ID:", session.user.id);
 
-      if (roleError || !roleData) {
+      // Verificar se é admin usando a função RPC
+      const { data: isAdminData, error: adminError } = await supabase.rpc('has_role', {
+        _user_id: session.user.id,
+        _role: 'admin'
+      });
+
+      console.log("🔐 Verificação de admin:", isAdminData, "Erro:", adminError);
+
+      if (adminError) {
+        console.error("❌ Erro ao verificar role:", adminError);
+        toast.error("Erro ao verificar permissões");
+        navigate("/");
+        return;
+      }
+
+      if (!isAdminData) {
+        console.log("🚫 Usuário não é admin");
         toast.error("Acesso negado: apenas administradores");
         navigate("/");
         return;
       }
 
+      console.log("✅ Usuário é admin! Buscando dados do dashboard...");
       setIsAdmin(true);
 
       // Buscar dados do dashboard
       const { data, error } = await supabase.functions.invoke("admin-dashboard");
 
       if (error) {
-        console.error("Erro ao buscar dados:", error);
+        console.error("❌ Erro ao buscar dados:", error);
         toast.error("Erro ao carregar dados do dashboard");
         return;
       }
 
+      console.log("✅ Dados do dashboard carregados:", data);
       setDashboardData(data);
     } catch (error) {
-      console.error("Erro:", error);
+      console.error("❌ Erro geral:", error);
       toast.error("Erro ao verificar permissões");
       navigate("/");
     } finally {
