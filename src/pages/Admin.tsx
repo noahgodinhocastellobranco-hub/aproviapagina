@@ -38,6 +38,7 @@ const Admin = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [filter, setFilter] = useState<"all" | "subscribed" | "free">("all");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -111,6 +112,12 @@ const Admin = () => {
     return null;
   }
 
+  const filteredUsers = dashboardData.users.filter((user) => {
+    if (filter === "subscribed") return user.subscription !== null;
+    if (filter === "free") return user.subscription === null;
+    return true;
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -165,58 +172,104 @@ const Admin = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Todos os Usuários</CardTitle>
-            <CardDescription>
-              Lista completa de usuários cadastrados e suas assinaturas
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Usuários ({filteredUsers.length})</CardTitle>
+                <CardDescription>
+                  {filter === "all" && "Lista completa de todos os usuários"}
+                  {filter === "subscribed" && "Usuários com assinatura ativa"}
+                  {filter === "free" && "Usuários sem assinatura"}
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={filter === "all" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("all")}
+                >
+                  Todos
+                </Button>
+                <Button
+                  variant={filter === "subscribed" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("subscribed")}
+                  className="gap-2"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  Assinantes
+                </Button>
+                <Button
+                  variant={filter === "free" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter("free")}
+                >
+                  Gratuitos
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Data de Cadastro</TableHead>
-                  <TableHead>Último Login</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assinatura</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dashboardData.users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.email}</TableCell>
-                    <TableCell>{formatDate(user.created_at)}</TableCell>
-                    <TableCell>
-                      {user.last_sign_in_at ? formatDate(user.last_sign_in_at) : "Nunca"}
-                    </TableCell>
-                    <TableCell>
-                      {user.subscription ? (
-                        <Badge variant="default">Assinante</Badge>
-                      ) : (
-                        <Badge variant="secondary">Gratuito</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.subscription ? (
-                        <div className="text-sm">
-                          <p className="font-medium">ID: {user.subscription.id}</p>
-                          <p className="text-muted-foreground">
-                            Válido até: {formatDate(user.subscription.current_period_end)}
-                          </p>
-                          {user.subscription.cancel_at_period_end && (
-                            <Badge variant="destructive" className="mt-1">
-                              Cancelará no fim do período
-                            </Badge>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">Sem assinatura</span>
-                      )}
-                    </TableCell>
+            {filteredUsers.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum usuário encontrado nesta categoria
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Data de Cadastro</TableHead>
+                    <TableHead>Último Login</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Assinatura</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers.map((user) => (
+                    <TableRow 
+                      key={user.id}
+                      className={user.subscription ? "bg-green-50 dark:bg-green-950/20" : ""}
+                    >
+                      <TableCell className="font-medium">{user.email}</TableCell>
+                      <TableCell>{formatDate(user.created_at)}</TableCell>
+                      <TableCell>
+                        {user.last_sign_in_at ? formatDate(user.last_sign_in_at) : "Nunca"}
+                      </TableCell>
+                      <TableCell>
+                        {user.subscription ? (
+                          <Badge variant="default" className="bg-green-600">
+                            ✓ Assinante
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary">
+                            Gratuito
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {user.subscription ? (
+                          <div className="text-sm">
+                            <p className="font-medium text-green-700 dark:text-green-400">
+                              ID: {user.subscription.id}
+                            </p>
+                            <p className="text-muted-foreground">
+                              Válido até: {formatDate(user.subscription.current_period_end)}
+                            </p>
+                            {user.subscription.cancel_at_period_end && (
+                              <Badge variant="destructive" className="mt-1">
+                                Cancelará no fim do período
+                              </Badge>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">Sem assinatura</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>
