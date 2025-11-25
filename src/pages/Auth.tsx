@@ -22,21 +22,34 @@ const Auth = () => {
 
   useEffect(() => {
     const checkUserAndRedirect = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Verificar se é admin
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .single();
-        
-        if (roleData) {
-          navigate("/admin");
-        } else {
-          navigate("/pricing");
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          console.log("Verificando role do usuário:", session.user.id);
+          // Verificar se é admin - usar maybeSingle() ao invés de single()
+          const { data: roleData, error } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          
+          if (error) {
+            console.error("Erro ao verificar role:", error);
+          }
+          
+          console.log("Role data:", roleData);
+          
+          if (roleData) {
+            console.log("Redirecionando para /admin");
+            navigate("/admin");
+          } else {
+            console.log("Redirecionando para /pricing");
+            navigate("/pricing");
+          }
         }
+      } catch (error) {
+        console.error("Erro no checkUserAndRedirect:", error);
       }
     };
 
@@ -44,19 +57,32 @@ const Auth = () => {
 
     // Escuta mudanças no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        // Verificar se é admin
-        const { data: roleData } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .eq("role", "admin")
-          .single();
-        
-        if (roleData) {
-          navigate("/admin");
-        } else {
-          navigate("/pricing");
+      if (session && event === 'SIGNED_IN') {
+        try {
+          console.log("Auth state changed - Verificando role:", session.user.id);
+          // Verificar se é admin - usar maybeSingle() ao invés de single()
+          const { data: roleData, error } = await supabase
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", session.user.id)
+            .eq("role", "admin")
+            .maybeSingle();
+          
+          if (error) {
+            console.error("Erro ao verificar role no auth change:", error);
+          }
+          
+          console.log("Role data no auth change:", roleData);
+          
+          if (roleData) {
+            console.log("Redirecionando para /admin");
+            navigate("/admin");
+          } else {
+            console.log("Redirecionando para /pricing");
+            navigate("/pricing");
+          }
+        } catch (error) {
+          console.error("Erro no onAuthStateChange:", error);
         }
       }
     });
