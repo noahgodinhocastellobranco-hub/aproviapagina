@@ -93,20 +93,32 @@ const Pricing = () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
+        console.log("Nenhuma sessão encontrada");
         setIsCheckingSubscription(false);
         return;
       }
 
+      console.log("Verificando assinatura para usuário:", session.user.email);
+
       const { data, error } = await supabase.functions.invoke("check-subscription");
       
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao chamar check-subscription:", error);
+        throw error;
+      }
+
+      console.log("Resposta do check-subscription:", data);
 
       if (data?.hasSubscription) {
         setHasSubscription(true);
-        toast.success("Você já tem um plano ativo!");
+        console.log("✅ Usuário tem assinatura ativa");
+      } else {
+        setHasSubscription(false);
+        console.log("❌ Usuário não tem assinatura ativa");
       }
     } catch (error) {
       console.error("Erro ao verificar assinatura:", error);
+      setHasSubscription(false);
     } finally {
       setIsCheckingSubscription(false);
     }
