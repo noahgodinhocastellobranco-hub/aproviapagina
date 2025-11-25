@@ -1,10 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Sparkles, ArrowLeft } from "lucide-react";
+import { Check, Sparkles, ArrowLeft, LogOut, AlertCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -12,7 +23,42 @@ const Pricing = () => {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [email, setEmail] = useState("");
   const [user, setUser] = useState<any>(null);
+  const [isCanceling, setIsCanceling] = useState(false);
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Logout realizado com sucesso");
+      navigate("/");
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      toast.error("Erro ao fazer logout");
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setIsCanceling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("cancel-subscription");
+      
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success("Plano cancelado com sucesso!");
+        setHasSubscription(false);
+        await checkSubscription();
+      } else {
+        throw new Error(data?.error || "Erro ao cancelar plano");
+      }
+    } catch (error) {
+      console.error("Erro ao cancelar plano:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao cancelar plano");
+    } finally {
+      setIsCanceling(false);
+    }
+  };
 
   useEffect(() => {
     checkAuthAndSubscription();
@@ -117,11 +163,28 @@ const Pricing = () => {
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container px-4 py-4">
+        <div className="container px-4 py-4 flex justify-between items-center">
           <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Voltar
           </Link>
+          
+          {user && (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                {user.email}
+              </span>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleLogout}
+                className="gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sair
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
@@ -199,16 +262,51 @@ const Pricing = () => {
                         Você já possui acesso completo à plataforma
                       </p>
                     </div>
-                    <Button 
-                      size="lg" 
-                      variant="outline"
-                      className="w-full text-lg py-6"
-                      asChild
-                    >
-                      <Link to="/">
-                        Voltar para Home
-                      </Link>
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        className="flex-1 text-lg py-6"
+                        asChild
+                      >
+                        <Link to="/">
+                          Voltar para Home
+                        </Link>
+                      </Button>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            size="lg" 
+                            variant="destructive"
+                            className="flex-1 text-lg py-6"
+                            disabled={isCanceling}
+                          >
+                            {isCanceling ? "Cancelando..." : "Cancelar Plano"}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="flex items-center gap-2">
+                              <AlertCircle className="w-5 h-5 text-destructive" />
+                              Cancelar Plano
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza que deseja cancelar seu plano? Você perderá acesso a todos os recursos da plataforma imediatamente.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Voltar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleCancelSubscription}
+                              className="bg-destructive hover:bg-destructive/90"
+                            >
+                              Sim, cancelar plano
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </div>
                 ) : !user ? (
                   <div className="space-y-3">
