@@ -57,22 +57,24 @@ const Auth = () => {
           }
 
           // Se não é admin, verificar assinatura
-          console.log("Não é admin, verificando assinatura");
+          console.log("🔍 Não é admin, verificando assinatura para:", session.user.email);
           const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription');
           
           if (subError) {
-            console.error("Erro ao verificar assinatura:", subError);
+            console.error("❌ Erro ao verificar assinatura:", subError);
             navigate("/pricing");
             return;
           }
 
-          console.log("Status da assinatura:", subData);
+          console.log("📊 Resposta completa da verificação:", JSON.stringify(subData, null, 2));
+          console.log("✅ hasSubscription?", subData?.hasSubscription);
           
           if (subData?.hasSubscription) {
-            console.log("Assinatura ativa, redirecionando para app");
+            console.log("🎉 Assinatura ativa confirmada! Redirecionando para app externo...");
+            console.log("🔗 URL de destino: https://aprovia.lovable.app");
             window.location.href = "https://aprovia.lovable.app";
           } else {
-            console.log("Sem assinatura, redirecionando para /pricing");
+            console.log("⚠️ Sem assinatura ativa. Redirecionando para página de planos...");
             navigate("/pricing");
           }
         }
