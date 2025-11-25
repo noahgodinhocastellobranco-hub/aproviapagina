@@ -48,9 +48,15 @@ const Admin = () => {
   const checkAdminAndFetchData = async () => {
     try {
       // Verificar autenticação
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast.error("Você precisa estar logado");
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      // Se há erro na sessão ou não há sessão, redirecionar para auth
+      if (sessionError || !session) {
+        console.log("Sessão inválida ou expirada");
+        if (sessionError) {
+          await supabase.auth.signOut();
+        }
+        toast.error("Sessão expirada, faça login novamente");
         navigate("/auth");
         return;
       }

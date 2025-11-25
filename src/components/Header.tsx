@@ -23,13 +23,16 @@ const Header = () => {
   useEffect(() => {
     checkUserAndSubscription();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        checkSubscription();
+        await checkSubscription();
+        await checkAdminRole(session.user.id);
       } else {
+        // Limpar tudo quando não há sessão
         setUser(null);
         setHasSubscription(false);
+        setIsAdmin(false);
         setIsChecking(false);
       }
     });
@@ -38,12 +41,33 @@ const Header = () => {
   }, []);
 
   const checkUserAndSubscription = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setUser(session.user);
-      await checkSubscription();
-      await checkAdminRole(session.user.id);
-    } else {
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      // Se há erro ao obter sessão ou sessão inválida, fazer logout
+      if (sessionError || !session) {
+        console.log("Sessão inválida ou expirada, fazendo logout");
+        await supabase.auth.signOut();
+        setUser(null);
+        setHasSubscription(false);
+        setIsAdmin(false);
+        setIsChecking(false);
+        return;
+      }
+
+      if (session?.user) {
+        setUser(session.user);
+        await checkSubscription();
+        await checkAdminRole(session.user.id);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar sessão:", error);
+      // Em caso de erro, fazer logout
+      await supabase.auth.signOut();
+      setUser(null);
+      setHasSubscription(false);
+      setIsAdmin(false);
+    } finally {
       setIsChecking(false);
     }
   };
@@ -82,13 +106,30 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
+      // Limpar estados primeiro
+      setUser(null);
+      setHasSubscription(false);
+      setIsAdmin(false);
+      
+      // Fazer signout
       const { error } = await supabase.auth.signOut();
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao fazer logout:", error);
+        // Mesmo com erro, limpar localStorage manualmente
+        localStorage.removeItem('supabase.auth.token');
+      }
+      
       toast.success("Logout realizado com sucesso");
       navigate("/");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
-      toast.error("Erro ao fazer logout");
+      // Em caso de erro, limpar localStorage e redirecionar
+      localStorage.removeItem('supabase.auth.token');
+      setUser(null);
+      setHasSubscription(false);
+      setIsAdmin(false);
+      navigate("/");
+      toast.error("Sessão encerrada");
     }
   };
 
