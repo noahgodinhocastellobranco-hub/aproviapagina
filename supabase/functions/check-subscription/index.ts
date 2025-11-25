@@ -20,6 +20,7 @@ serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
+      console.log("Nenhum header de autorização fornecido");
       return new Response(JSON.stringify({ hasSubscription: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -31,11 +32,14 @@ serve(async (req) => {
     const user = data.user;
     
     if (!user?.email) {
+      console.log("Usuário não encontrado ou sem email");
       return new Response(JSON.stringify({ hasSubscription: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
+
+    console.log("Verificando assinatura para:", user.email);
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -44,6 +48,7 @@ serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     
     if (customers.data.length === 0) {
+      console.log("Cliente não encontrado no Stripe");
       return new Response(JSON.stringify({ hasSubscription: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
@@ -51,13 +56,21 @@ serve(async (req) => {
     }
 
     const customerId = customers.data[0].id;
+    console.log("Cliente encontrado:", customerId);
+    
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
 
+    console.log("Assinaturas ativas encontradas:", subscriptions.data.length);
+
     const hasActiveSubscription = subscriptions.data.length > 0;
+
+    if (hasActiveSubscription) {
+      console.log("Assinatura ativa encontrada:", subscriptions.data[0].id);
+    }
 
     return new Response(JSON.stringify({ 
       hasSubscription: hasActiveSubscription,
@@ -69,8 +82,11 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Error checking subscription:", error);
-    return new Response(JSON.stringify({ hasSubscription: false }), {
+    console.error("Erro ao verificar assinatura:", error);
+    return new Response(JSON.stringify({ 
+      hasSubscription: false,
+      error: error instanceof Error ? error.message : "Erro desconhecido"
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
