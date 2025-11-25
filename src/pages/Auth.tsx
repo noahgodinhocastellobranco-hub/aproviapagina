@@ -23,7 +23,18 @@ const Auth = () => {
   useEffect(() => {
     const checkUserAndRedirect = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // Se há erro na sessão ou não há sessão, não fazer nada (ficar na página de auth)
+        if (sessionError || !session) {
+          console.log("Sem sessão válida");
+          // Se houver erro de sessão, limpar
+          if (sessionError) {
+            await supabase.auth.signOut();
+          }
+          return;
+        }
+
         if (session) {
           console.log("Verificando usuário:", session.user.id);
           
