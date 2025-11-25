@@ -88,58 +88,11 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth event:", event, "Session:", session?.user?.id);
       
-      if (session) {
-        // Usar setTimeout para evitar problemas de deadlock
-        setTimeout(async () => {
-          try {
-            console.log("Verificando role de admin para:", session.user.id);
-            
-            // Verificar se é admin usando a função RPC
-            const { data: isAdminData, error: adminError } = await supabase.rpc('has_role', {
-              _user_id: session.user.id,
-              _role: 'admin'
-            });
-            
-            console.log("Resultado has_role:", isAdminData, "Erro:", adminError);
-            
-            if (adminError) {
-              console.error("Erro ao verificar role:", adminError);
-            }
-            
-            if (isAdminData === true) {
-              console.log("✅ Admin confirmado! Redirecionando para /admin");
-              setIsLoading(false);
-              navigate("/admin");
-              return;
-            }
-
-            // Se não é admin, verificar assinatura
-            console.log("Não é admin, verificando assinatura");
-            const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription');
-            
-            if (subError) {
-              console.error("Erro ao verificar assinatura:", subError);
-              setIsLoading(false);
-              navigate("/pricing");
-              return;
-            }
-
-            console.log("Status da assinatura:", subData);
-            
-            if (subData?.hasSubscription) {
-              console.log("Assinatura ativa, redirecionando para app");
-              window.location.href = "https://aprovia.lovable.app";
-            } else {
-              console.log("Sem assinatura, redirecionando para /pricing");
-              setIsLoading(false);
-              navigate("/pricing");
-            }
-          } catch (error) {
-            console.error("Erro no onAuthStateChange:", error);
-            setIsLoading(false);
-            navigate("/pricing");
-          }
-        }, 0);
+      // Apenas atualizar estados básicos, não fazer chamadas ao Supabase aqui
+      if (session && event === 'SIGNED_IN') {
+        console.log("Login detectado, recarregando verificação");
+        // Forçar recarregar a verificação
+        checkUserAndRedirect();
       }
     });
 
@@ -171,6 +124,12 @@ const Auth = () => {
 
     setIsLoading(true);
 
+    // Timeout de segurança: se demorar mais de 10 segundos, mostrar erro
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+      toast.error("Login está demorando muito. Tente novamente.");
+    }, 10000);
+
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
@@ -179,8 +138,12 @@ const Auth = () => {
         });
 
         if (error) throw error;
-        toast.success("Login realizado com sucesso!");
-        // Não precisa setar isLoading(false) aqui porque o onAuthStateChange vai redirecionar
+        
+        clearTimeout(timeoutId);
+        toast.success("Login realizado! Redirecionando...");
+        
+        // Aguardar um pouco para o onAuthStateChange processar
+        await new Promise(resolve => setTimeout(resolve, 500));
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -194,11 +157,17 @@ const Auth = () => {
         });
 
         if (error) throw error;
-        toast.success("Conta criada! Redirecionando para os planos...");
-        // Não precisa setar isLoading(false) aqui porque o onAuthStateChange vai redirecionar
+        
+        clearTimeout(timeoutId);
+        toast.success("Conta criada! Redirecionando...");
+        
+        // Aguardar um pouco para o onAuthStateChange processar
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     } catch (error: any) {
-      setIsLoading(false); // Importante: setar false em caso de erro
+      clearTimeout(timeoutId);
+      setIsLoading(false);
+      
       if (error.message.includes("User already registered")) {
         toast.error("Este email já está cadastrado. Faça login.");
         setIsLogin(true);
