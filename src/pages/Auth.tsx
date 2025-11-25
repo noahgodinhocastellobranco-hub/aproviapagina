@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
-import { Brain, Sparkles } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Brain, Sparkles, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email({ message: "Email inválido" });
@@ -102,8 +102,17 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      {/* Header com botão voltar */}
+      <div className="container px-4 py-4">
+        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-4 h-4" />
+          Voltar
+        </Link>
+      </div>
+
+      <div className="flex items-center justify-center p-4">
+        <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-4">
           <div className="flex items-center justify-center gap-2">
             <Brain className="w-10 h-10 text-primary" />
@@ -200,6 +209,7 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 };
