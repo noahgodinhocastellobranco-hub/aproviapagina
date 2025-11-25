@@ -66,24 +66,30 @@ serve(async (req) => {
 
     // Inicializar Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
+      apiVersion: "2024-11-20.acacia",
     });
 
-    // Buscar todas as assinaturas ativas
+    // Buscar todas as assinaturas ativas com dados do customer expandidos
     const subscriptions = await stripe.subscriptions.list({ 
       status: "active",
-      limit: 100
+      limit: 100,
+      expand: ['data.customer']
     });
 
     console.log(`[ADMIN-DASHBOARD] Found ${subscriptions.data.length} active subscriptions`);
 
     // Mapear usuários com suas assinaturas
     const usersWithSubscriptions = users.map(user => {
-      const userSubscription = subscriptions.data.find((sub: Stripe.Subscription) => 
-        sub.customer && typeof sub.customer === 'object' 
-          ? (sub.customer as Stripe.Customer).email === user.email 
-          : false
-      );
+      const userSubscription = subscriptions.data.find((sub: Stripe.Subscription) => {
+        if (!sub.customer) return false;
+        
+        // Customer pode ser string (ID) ou objeto expandido
+        if (typeof sub.customer === 'string') {
+          return false; // Não conseguimos comparar com string ID
+        }
+        
+        return (sub.customer as Stripe.Customer).email === user.email;
+      });
 
       return {
         id: user.id,
