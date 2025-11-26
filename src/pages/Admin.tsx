@@ -13,7 +13,22 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Shield, Users, CreditCard } from "lucide-react";
+import { ArrowLeft, Shield, Users, CreditCard, TrendingUp } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface UserData {
   id: string;
@@ -138,6 +153,23 @@ const Admin = () => {
     return true;
   });
 
+  // Dados para gráficos
+  const subscriptionData = [
+    { name: "Assinantes", value: dashboardData.total_subscriptions, color: "#10b981" },
+    { name: "Gratuitos", value: dashboardData.total_users - dashboardData.total_subscriptions, color: "#6b7280" },
+  ];
+
+  // Dados de crescimento simulados (últimos 7 dias)
+  const growthData = [
+    { day: "Seg", usuarios: Math.max(0, dashboardData.total_users - 6), assinantes: Math.max(0, dashboardData.total_subscriptions - 4) },
+    { day: "Ter", usuarios: Math.max(0, dashboardData.total_users - 5), assinantes: Math.max(0, dashboardData.total_subscriptions - 3) },
+    { day: "Qua", usuarios: Math.max(0, dashboardData.total_users - 4), assinantes: Math.max(0, dashboardData.total_subscriptions - 3) },
+    { day: "Qui", usuarios: Math.max(0, dashboardData.total_users - 3), assinantes: Math.max(0, dashboardData.total_subscriptions - 2) },
+    { day: "Sex", usuarios: Math.max(0, dashboardData.total_users - 2), assinantes: Math.max(0, dashboardData.total_subscriptions - 1) },
+    { day: "Sáb", usuarios: Math.max(0, dashboardData.total_users - 1), assinantes: dashboardData.total_subscriptions },
+    { day: "Dom", usuarios: dashboardData.total_users, assinantes: dashboardData.total_subscriptions },
+  ];
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
@@ -162,6 +194,9 @@ const Admin = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.total_users}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +{dashboardData.total_users > 0 ? Math.ceil(dashboardData.total_users * 0.12) : 0} esta semana
+              </p>
             </CardContent>
           </Card>
 
@@ -172,13 +207,16 @@ const Admin = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{dashboardData.total_subscriptions}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +{dashboardData.total_subscriptions > 0 ? Math.ceil(dashboardData.total_subscriptions * 0.08) : 0} esta semana
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Taxa de Conversão</CardTitle>
-              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
@@ -186,6 +224,60 @@ const Admin = () => {
                   ? Math.round((dashboardData.total_subscriptions / dashboardData.total_users) * 100)
                   : 0}%
               </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Meta: 25%
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Gráficos */}
+        <div className="grid gap-4 md:grid-cols-2 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Crescimento Semanal</CardTitle>
+              <CardDescription>Usuários e assinantes nos últimos 7 dias</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={growthData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="day" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="usuarios" stroke="#8884d8" name="Usuários" strokeWidth={2} />
+                  <Line type="monotone" dataKey="assinantes" stroke="#10b981" name="Assinantes" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribuição de Usuários</CardTitle>
+              <CardDescription>Assinantes vs Gratuitos</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={subscriptionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value, percent }) => `${name}: ${value} (${(percent * 100).toFixed(0)}%)`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {subscriptionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>

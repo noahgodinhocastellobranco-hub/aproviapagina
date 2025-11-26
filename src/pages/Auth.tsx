@@ -25,10 +25,8 @@ const Auth = () => {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        // Se há erro na sessão ou não há sessão, não fazer nada (ficar na página de auth)
         if (sessionError || !session) {
           console.log("Sem sessão válida");
-          // Se houver erro de sessão, limpar
           if (sessionError) {
             await supabase.auth.signOut();
           }
@@ -90,10 +88,9 @@ const Auth = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth event:", event, "Session:", session?.user?.id);
       
-      // Apenas atualizar estados básicos, não fazer chamadas ao Supabase aqui
+      // Apenas recarregar a verificação quando for um login bem-sucedido
       if (session && event === 'SIGNED_IN') {
         console.log("Login detectado, recarregando verificação");
-        // Forçar recarregar a verificação
         checkUserAndRedirect();
       }
     });
