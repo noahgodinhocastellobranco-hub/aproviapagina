@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Sparkles, ArrowLeft, LogOut, AlertCircle } from "lucide-react";
+import { Check, Sparkles, ArrowLeft, LogOut, AlertCircle, Loader2 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
@@ -293,8 +293,9 @@ const Pricing = () => {
                   {/* CTA Button */}
                   <div className="space-y-4">
                     {isCheckingSubscription ? (
-                      <div className="text-center py-6">
-                        <p className="text-muted-foreground text-sm">Verificando seu plano...</p>
+                      <div className="text-center py-8">
+                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+                        <p className="text-muted-foreground text-sm font-medium">Verificando seu plano...</p>
                       </div>
                     ) : hasSubscription ? (
                       <div className="space-y-3">
