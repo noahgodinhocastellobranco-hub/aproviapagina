@@ -21,56 +21,66 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let isChecking = false;
-
     const checkUser = async () => {
-      if (isChecking) return;
-      isChecking = true;
-
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (!session) {
-          isChecking = false;
-          return;
-        }
+        if (!session) return;
 
-        console.log("Sessão encontrada:", session.user.id);
+        console.log("Sessão encontrada:", session.user.email);
         
         // Verificar admin
-        const { data: isAdmin } = await supabase.rpc('has_role', {
+        const { data: isAdmin, error: adminError } = await supabase.rpc('has_role', {
           _user_id: session.user.id,
           _role: 'admin'
         });
 
+        if (adminError) {
+          console.error("Erro ao verificar admin:", adminError);
+        }
+
         if (isAdmin) {
+          console.log("Usuário é admin, redirecionando...");
           navigate("/admin");
           return;
         }
 
         // Verificar assinatura
-        const { data: subData } = await supabase.functions.invoke('check-subscription', {
+        console.log("Verificando assinatura...");
+        const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription', {
           headers: { Authorization: `Bearer ${session.access_token}` }
         });
 
+        if (subError) {
+          console.error("Erro ao verificar assinatura:", subError);
+          navigate("/pricing");
+          return;
+        }
+
+        console.log("Resposta da assinatura:", subData);
+
         if (subData?.hasSubscription) {
+          console.log("Tem assinatura, redirecionando para app...");
           window.location.href = "https://aprovia.lovable.app";
         } else {
+          console.log("Sem assinatura, redirecionando para pricing...");
           navigate("/pricing");
         }
       } catch (error) {
-        console.error("Erro:", error);
+        console.error("Erro no checkUser:", error);
         navigate("/pricing");
-      } finally {
-        isChecking = false;
       }
     };
 
+    // Executar verificação inicial
     checkUser();
 
+    // Configurar listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session && !isChecking) {
-        setTimeout(() => checkUser(), 100);
+      console.log("Auth state changed:", event);
+      if (event === 'SIGNED_IN' && session) {
+        // Usar setTimeout para evitar chamadas síncronas dentro do callback
+        setTimeout(() => checkUser(), 0);
       }
     });
 
@@ -105,6 +115,7 @@ const Auth = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Login realizado!");
+        // O redirecionamento será feito pelo useEffect
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -116,6 +127,7 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Conta criada!");
+        // O redirecionamento será feito pelo useEffect
       }
     } catch (error: any) {
       setIsLoading(false);
