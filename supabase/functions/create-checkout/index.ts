@@ -15,13 +15,17 @@ serve(async (req) => {
   try {
     console.log("[CREATE-CHECKOUT] Function started");
 
-    const { email } = await req.json();
+    const { email, priceId } = await req.json();
     
     if (!email) {
       throw new Error("Email is required");
     }
 
+    // Use provided priceId or default to monthly plan
+    const selectedPriceId = priceId || "price_1SXRA8KLwUDwjnpN3HbaHAme";
+
     console.log("[CREATE-CHECKOUT] Email received:", email);
+    console.log("[CREATE-CHECKOUT] Price ID:", selectedPriceId);
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
@@ -45,7 +49,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : email,
       line_items: [
         {
-          price: "price_1SXRA8KLwUDwjnpN3HbaHAme",
+          price: selectedPriceId,
           quantity: 1,
         },
       ],

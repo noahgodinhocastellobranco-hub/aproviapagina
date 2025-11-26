@@ -124,7 +124,7 @@ const Pricing = () => {
     }
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (priceId: string) => {
     if (!user) {
       toast.error("Você precisa estar logado para assinar");
       navigate("/auth");
@@ -144,7 +144,7 @@ const Pricing = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { email },
+        body: { email, priceId },
       });
 
       if (error) throw error;
@@ -159,6 +159,24 @@ const Pricing = () => {
       setIsLoading(false);
     }
   };
+
+  const plans = [
+    {
+      name: "Mensal",
+      price: "19,99",
+      period: "mês",
+      priceId: "price_1SXRA8KLwUDwjnpN3HbaHAme",
+      description: "Acesso mensal completo"
+    },
+    {
+      name: "Anual",
+      price: "214,92",
+      period: "ano",
+      priceId: "price_1SXWaRKLwUDwjnpNckJfkN7N",
+      description: "Economize com o plano anual",
+      badge: "Melhor Oferta"
+    }
+  ];
 
   const features = [
     "Correção ilimitada de redações com IA",
@@ -218,154 +236,149 @@ const Pricing = () => {
             </p>
           </div>
 
-          {/* Pricing Card */}
-          <Card className="border-2 border-primary/20 shadow-2xl max-w-2xl mx-auto">
-            <CardHeader className="text-center pb-8 pt-8">
-              <div className="inline-flex items-center justify-center gap-2 mb-4">
-                <Sparkles className="w-6 h-6 text-primary" />
-                <CardTitle className="text-2xl">Plano Completo AprovI.A</CardTitle>
-              </div>
-              <CardDescription className="text-lg">
-                Acesso ilimitado a todas as funcionalidades
-              </CardDescription>
-            </CardHeader>
-            
-            <CardContent className="space-y-8">
-              {/* Price */}
-              <div className="text-center py-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg">
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl md:text-7xl font-bold text-primary">R$ 19,99</span>
-                  <span className="text-2xl text-muted-foreground">/mês</span>
+          {/* Features List */}
+          <div className="mb-12">
+            <h3 className="font-semibold text-xl text-center mb-6">O que está incluído em todos os planos:</h3>
+            <div className="grid md:grid-cols-2 gap-3 max-w-3xl mx-auto">
+              {features.map((feature, index) => (
+                <div key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-primary" />
+                  </div>
+                  <span className="text-foreground text-sm">{feature}</span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Cancele quando quiser
-                </p>
-              </div>
+              ))}
+            </div>
+          </div>
 
-              {/* Features List */}
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">O que está incluído:</h3>
-                <div className="grid gap-3">
-                  {features.map((feature, index) => (
-                    <div key={index} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <Check className="w-3 h-3 text-primary" />
-                      </div>
-                      <span className="text-foreground">{feature}</span>
+          {/* Pricing Cards */}
+          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+            {plans.map((plan) => (
+              <Card key={plan.priceId} className={`border-2 ${plan.badge ? 'border-primary shadow-2xl' : 'border-primary/20 shadow-lg'} relative`}>
+                {plan.badge && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
+                      {plan.badge}
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* CTA Button */}
-              <div className="space-y-4 pt-4">
-                {isCheckingSubscription ? (
-                  <div className="text-center py-6">
-                    <p className="text-muted-foreground">Verificando seu plano...</p>
-                  </div>
-                ) : hasSubscription ? (
-                  <div className="space-y-3">
-                    <div className="bg-accent/10 border border-accent rounded-lg p-6 text-center">
-                      <Check className="w-12 h-12 text-accent mx-auto mb-3" />
-                      <h3 className="text-xl font-semibold text-accent mb-2">
-                        Plano Ativo!
-                      </h3>
-                      <p className="text-muted-foreground">
-                        Você já possui acesso completo à plataforma
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button 
-                        size="lg" 
-                        variant="outline"
-                        className="flex-1 text-lg py-6"
-                        asChild
-                      >
-                        <Link to="/">
-                          Voltar para Home
-                        </Link>
-                      </Button>
-                      
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            size="lg" 
-                            variant="destructive"
-                            className="flex-1 text-lg py-6"
-                            disabled={isCanceling}
-                          >
-                            {isCanceling ? "Cancelando..." : "Cancelar Plano"}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="flex items-center gap-2">
-                              <AlertCircle className="w-5 h-5 text-destructive" />
-                              Cancelar Plano
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja cancelar seu plano? Você perderá acesso a todos os recursos da plataforma imediatamente.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Voltar</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={handleCancelSubscription}
-                              className="bg-destructive hover:bg-destructive/90"
-                            >
-                              Sim, cancelar plano
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-                ) : !user ? (
-                  <div className="space-y-3">
-                    <p className="text-center text-muted-foreground mb-4">
-                      Faça login ou crie uma conta para continuar
-                    </p>
-                    <Button 
-                      size="lg" 
-                      className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-                      asChild
-                    >
-                      <Link to="/auth">
-                        Login / Criar Conta
-                        <Sparkles className="ml-2 h-5 w-5" />
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <input
-                      type="email"
-                      placeholder="Seu melhor email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <Button 
-                      size="lg" 
-                      className="w-full text-lg py-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-                      onClick={handleCheckout}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Processando..." : "Começar Agora"}
-                      {!isLoading && <Sparkles className="ml-2 h-5 w-5" />}
-                    </Button>
                   </div>
                 )}
                 
-                {!hasSubscription && (
-                  <p className="text-center text-sm text-muted-foreground">
-                    ✓ Sem cartão de crédito para testar  ✓ Acesso imediato  ✓ Garantia de 7 dias
-                  </p>
-                )}
-              </div>
+                <CardHeader className="text-center pb-6 pt-8">
+                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
+                  <CardDescription>{plan.description}</CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-6">
+                  {/* Price */}
+                  <div className="text-center py-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg">
+                    <div className="flex items-baseline justify-center gap-2">
+                      <span className="text-4xl md:text-5xl font-bold text-primary">R$ {plan.price}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      por {plan.period}
+                    </p>
+                  </div>
 
-              {/* Trust Badges */}
-              <div className="pt-6 border-t">
+                  {/* CTA Button */}
+                  <div className="space-y-4">
+                    {isCheckingSubscription ? (
+                      <div className="text-center py-6">
+                        <p className="text-muted-foreground text-sm">Verificando seu plano...</p>
+                      </div>
+                    ) : hasSubscription ? (
+                      <div className="space-y-3">
+                        <div className="bg-accent/10 border border-accent rounded-lg p-4 text-center">
+                          <Check className="w-8 h-8 text-accent mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-accent">Plano Ativo!</p>
+                        </div>
+                      </div>
+                    ) : !user ? (
+                      <Button 
+                        size="lg" 
+                        className="w-full"
+                        asChild
+                      >
+                        <Link to="/auth">
+                          Login / Criar Conta
+                          <Sparkles className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button 
+                        size="lg" 
+                        className="w-full"
+                        onClick={() => handleCheckout(plan.priceId)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? "Processando..." : "Assinar Agora"}
+                        {!isLoading && <Sparkles className="ml-2 h-4 w-4" />}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Subscription Management */}
+          {hasSubscription && user && (
+            <div className="mt-8 max-w-2xl mx-auto">
+              <Card className="border-2 border-accent/20">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button 
+                      size="lg" 
+                      variant="outline"
+                      className="flex-1"
+                      asChild
+                    >
+                      <Link to="/">
+                        Voltar para Home
+                      </Link>
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          size="lg" 
+                          variant="destructive"
+                          className="flex-1"
+                          disabled={isCanceling}
+                        >
+                          {isCanceling ? "Cancelando..." : "Cancelar Plano"}
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-destructive" />
+                            Cancelar Plano
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Tem certeza que deseja cancelar seu plano? Você perderá acesso a todos os recursos da plataforma imediatamente.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Voltar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={handleCancelSubscription}
+                            className="bg-destructive hover:bg-destructive/90"
+                          >
+                            Sim, cancelar plano
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Trust Badges */}
+          <div className="mt-12 max-w-2xl mx-auto">
+            <Card className="border-primary/20">
+              <CardContent className="pt-6">
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-2xl font-bold text-primary">+5000</div>
@@ -380,9 +393,9 @@ const Pricing = () => {
                     <div className="text-xs text-muted-foreground">Aprovação</div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* FAQ Section */}
           <div className="mt-12 text-center">
