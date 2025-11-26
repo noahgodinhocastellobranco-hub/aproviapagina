@@ -98,9 +98,20 @@ const Pricing = () => {
         return;
       }
 
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        console.log("Token de acesso não encontrado");
+        setIsCheckingSubscription(false);
+        return;
+      }
+
       console.log("Verificando assinatura para usuário:", session.user.email);
 
-      const { data, error } = await supabase.functions.invoke("check-subscription");
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       
       if (error) {
         console.error("Erro ao chamar check-subscription:", error);
