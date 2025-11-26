@@ -90,10 +90,25 @@ const Header = () => {
   const checkSubscription = async () => {
     try {
       console.log("🔍 Verificando status de assinatura...");
-      const { data, error } = await supabase.functions.invoke("check-subscription");
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.log("❌ Sem sessão ativa");
+        setHasSubscription(false);
+        setIsChecking(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
       
       if (error) {
         console.error("❌ Erro ao verificar assinatura:", error);
+        setHasSubscription(false);
+        setIsChecking(false);
         return;
       }
 
@@ -101,9 +116,10 @@ const Header = () => {
       console.log("✅ hasSubscription:", data?.hasSubscription);
       
       setHasSubscription(data?.hasSubscription || false);
+      setIsChecking(false);
     } catch (error) {
       console.error("❌ Erro ao verificar assinatura:", error);
-    } finally {
+      setHasSubscription(false);
       setIsChecking(false);
     }
   };
