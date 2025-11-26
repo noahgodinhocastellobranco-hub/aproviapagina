@@ -21,77 +21,56 @@ const Auth = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUserAndRedirect = async () => {
+    let isChecking = false;
+
+    const checkUser = async () => {
+      if (isChecking) return;
+      isChecking = true;
+
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (sessionError || !session) {
-          console.log("Sem sessão válida");
-          if (sessionError) {
-            await supabase.auth.signOut();
-          }
+        if (!session) {
+          isChecking = false;
           return;
         }
 
-        if (session) {
-          console.log("Sessão existente encontrada:", session.user.id);
-          
-          // Verificar se é admin usando a função RPC
-          const { data: isAdminData, error: adminError } = await supabase.rpc('has_role', {
-            _user_id: session.user.id,
-            _role: 'admin'
-          });
-          
-          console.log("Check inicial - Admin?", isAdminData, "Erro:", adminError);
-          
-          if (adminError) {
-            console.error("Erro ao verificar role:", adminError);
-          }
-          
-          if (isAdminData === true) {
-            console.log("✅ Admin confirmado no check inicial! Redirecionando...");
-            navigate("/admin");
-            return;
-          }
+        console.log("Sessão encontrada:", session.user.id);
+        
+        // Verificar admin
+        const { data: isAdmin } = await supabase.rpc('has_role', {
+          _user_id: session.user.id,
+          _role: 'admin'
+        });
 
-          // Se não é admin, verificar assinatura
-          console.log("🔍 Não é admin, verificando assinatura para:", session.user.email);
-          const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription');
-          
-          if (subError) {
-            console.error("❌ Erro ao verificar assinatura:", subError);
-            navigate("/pricing");
-            return;
-          }
+        if (isAdmin) {
+          navigate("/admin");
+          return;
+        }
 
-          console.log("📊 Resposta completa da verificação:", JSON.stringify(subData, null, 2));
-          console.log("✅ hasSubscription?", subData?.hasSubscription);
-          
-          if (subData?.hasSubscription) {
-            console.log("🎉 Assinatura ativa confirmada! Redirecionando para app externo...");
-            console.log("🔗 URL de destino: https://aprovia.lovable.app");
-            window.location.href = "https://aprovia.lovable.app";
-          } else {
-            console.log("⚠️ Sem assinatura ativa. Redirecionando para página de planos...");
-            navigate("/pricing");
-          }
+        // Verificar assinatura
+        const { data: subData } = await supabase.functions.invoke('check-subscription', {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        });
+
+        if (subData?.hasSubscription) {
+          window.location.href = "https://aprovia.lovable.app";
+        } else {
+          navigate("/pricing");
         }
       } catch (error) {
-        console.error("Erro no checkUserAndRedirect:", error);
+        console.error("Erro:", error);
         navigate("/pricing");
+      } finally {
+        isChecking = false;
       }
     };
 
-    checkUserAndRedirect();
+    checkUser();
 
-    // Escuta mudanças no estado de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth event:", event, "Session:", session?.user?.id);
-      
-      // Apenas recarregar a verificação quando for um login bem-sucedido
-      if (session && event === 'SIGNED_IN') {
-        console.log("Login detectado, recarregando verificação");
-        checkUserAndRedirect();
+      if (event === 'SIGNED_IN' && session && !isChecking) {
+        setTimeout(() => checkUser(), 100);
       }
     });
 
@@ -101,79 +80,52 @@ const Auth = () => {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação de campos vazios
+    if (isLoading) return;
+    
     if (!email || !password || (!isLogin && !fullName)) {
-      toast.error("Por favor, preencha todos os campos");
+      toast.error("Preencha todos os campos");
       return;
     }
 
-    // Validação com zod
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
-      if (!isLogin) {
-        nameSchema.parse(fullName);
-      }
+      if (!isLogin) nameSchema.parse(fullName);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
-        return;
       }
+      return;
     }
 
     setIsLoading(true);
 
-    // Timeout de segurança: se demorar mais de 10 segundos, mostrar erro
-    const timeoutId = setTimeout(() => {
-      setIsLoading(false);
-      toast.error("Login está demorando muito. Tente novamente.");
-    }, 10000);
-
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        
-        clearTimeout(timeoutId);
-        toast.success("Login realizado! Redirecionando...");
-        
-        // Aguardar um pouco para o onAuthStateChange processar
-        await new Promise(resolve => setTimeout(resolve, 500));
+        toast.success("Login realizado!");
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/pricing`,
-            data: {
-              full_name: fullName,
-            },
+            data: { full_name: fullName },
           },
         });
-
         if (error) throw error;
-        
-        clearTimeout(timeoutId);
-        toast.success("Conta criada! Redirecionando...");
-        
-        // Aguardar um pouco para o onAuthStateChange processar
-        await new Promise(resolve => setTimeout(resolve, 500));
+        toast.success("Conta criada!");
       }
     } catch (error: any) {
-      clearTimeout(timeoutId);
       setIsLoading(false);
-      
       if (error.message.includes("User already registered")) {
-        toast.error("Este email já está cadastrado. Faça login.");
+        toast.error("Email já cadastrado. Faça login.");
         setIsLogin(true);
       } else if (error.message.includes("Invalid login credentials")) {
         toast.error("Email ou senha incorretos");
       } else {
-        toast.error(error.message || "Erro ao processar autenticação");
+        toast.error(error.message || "Erro na autenticação");
       }
     }
   };
