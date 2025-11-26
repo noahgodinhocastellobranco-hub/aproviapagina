@@ -61,13 +61,26 @@ const Pricing = () => {
   };
 
   useEffect(() => {
-    checkAuthAndSubscription();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
         setEmail(session.user.email || "");
-        checkSubscription();
+        await checkSubscription();
+      } else {
+        setIsCheckingSubscription(false);
+      }
+    };
+
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth changed:", event);
+      if (session?.user) {
+        setUser(session.user);
+        setEmail(session.user.email || "");
+        // Usar setTimeout para evitar chamadas assíncronas dentro do callback
+        setTimeout(() => checkSubscription(), 0);
       } else {
         setUser(null);
         setHasSubscription(false);
@@ -78,22 +91,16 @@ const Pricing = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAuthAndSubscription = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user) {
-      setUser(session.user);
-      setEmail(session.user.email || "");
-      await checkSubscription();
-    } else {
-      setIsCheckingSubscription(false);
-    }
-  };
-
   const checkSubscription = async () => {
+    console.log("=== Iniciando checkSubscription ===");
+    setIsCheckingSubscription(true);
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
         console.log("Nenhuma sessão encontrada");
+        setHasSubscription(false);
         setIsCheckingSubscription(false);
         return;
       }
@@ -101,6 +108,7 @@ const Pricing = () => {
       const accessToken = session?.access_token;
       if (!accessToken) {
         console.log("Token de acesso não encontrado");
+        setHasSubscription(false);
         setIsCheckingSubscription(false);
         return;
       }
@@ -115,7 +123,9 @@ const Pricing = () => {
       
       if (error) {
         console.error("Erro ao chamar check-subscription:", error);
-        throw error;
+        setHasSubscription(false);
+        setIsCheckingSubscription(false);
+        return;
       }
 
       console.log("Resposta do check-subscription:", data);
@@ -132,6 +142,7 @@ const Pricing = () => {
       setHasSubscription(false);
     } finally {
       setIsCheckingSubscription(false);
+      console.log("=== Finalizando checkSubscription ===");
     }
   };
 
