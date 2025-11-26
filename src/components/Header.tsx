@@ -89,16 +89,20 @@ const Header = () => {
 
   const checkSubscription = async () => {
     try {
+      console.log("🔍 Verificando status de assinatura...");
       const { data, error } = await supabase.functions.invoke("check-subscription");
       
       if (error) {
-        console.error("Erro ao verificar assinatura:", error);
+        console.error("❌ Erro ao verificar assinatura:", error);
         return;
       }
 
+      console.log("📊 Resposta da verificação de assinatura:", data);
+      console.log("✅ hasSubscription:", data?.hasSubscription);
+      
       setHasSubscription(data?.hasSubscription || false);
     } catch (error) {
-      console.error("Erro ao verificar assinatura:", error);
+      console.error("❌ Erro ao verificar assinatura:", error);
     } finally {
       setIsChecking(false);
     }
@@ -134,24 +138,40 @@ const Header = () => {
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Tem certeza que deseja cancelar sua assinatura? Você perderá o acesso ao aplicativo.")) {
+    if (!confirm("⚠️ TEM CERTEZA?\n\nVocê deseja realmente cancelar sua assinatura?\n\nVocê perderá o acesso imediato ao aplicativo AprovI.A.")) {
       return;
     }
 
     try {
-      const { error } = await supabase.functions.invoke("cancel-subscription");
+      console.log("🔄 Iniciando cancelamento de assinatura...");
+      
+      const { data, error } = await supabase.functions.invoke("cancel-subscription");
       
       if (error) {
+        console.error("❌ Erro ao cancelar:", error);
         toast.error("Erro ao cancelar assinatura");
-        console.error("Erro:", error);
         return;
       }
 
-      toast.success("Assinatura cancelada com sucesso");
-      setHasSubscription(false);
-      navigate("/pricing");
+      console.log("✅ Resposta do cancelamento:", data);
+
+      if (data?.success) {
+        toast.success("✅ Assinatura cancelada com sucesso!");
+        console.log("🔄 Atualizando status de assinatura...");
+        
+        // Atualizar o estado imediatamente
+        setHasSubscription(false);
+        
+        // Redirecionar para a página de planos após 2 segundos
+        setTimeout(() => {
+          console.log("➡️ Redirecionando para /pricing");
+          navigate("/pricing");
+        }, 2000);
+      } else {
+        toast.error("Erro ao processar cancelamento");
+      }
     } catch (error) {
-      console.error("Erro ao cancelar assinatura:", error);
+      console.error("❌ Erro ao cancelar assinatura:", error);
       toast.error("Erro ao cancelar assinatura");
     }
   };
@@ -176,36 +196,38 @@ const Header = () => {
         </span>
         
         {hasSubscription && (
-          <Button 
-            variant="default" 
-            size="sm" 
-            className="gap-2"
-            asChild
-          >
-            <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-4 h-4" />
-              Acessar Aplicativo
-            </a>
-          </Button>
-        )}
+          <>
+            <Button 
+              variant="default" 
+              size="sm" 
+              className="gap-2 bg-green-600 hover:bg-green-700"
+              asChild
+            >
+              <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="w-4 h-4" />
+                <span className="hidden sm:inline">Acessar Aplicativo</span>
+                <span className="sm:hidden">App</span>
+              </a>
+            </Button>
 
-        {hasSubscription && (
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            className="gap-2"
-            onClick={handleCancelSubscription}
-          >
-            <X className="w-4 h-4" />
-            Cancelar Assinatura
-          </Button>
+            <Button 
+              variant="destructive" 
+              size="sm" 
+              className="gap-2"
+              onClick={handleCancelSubscription}
+            >
+              <X className="w-4 h-4" />
+              <span className="hidden sm:inline">Cancelar Assinatura</span>
+              <span className="sm:hidden">Cancelar</span>
+            </Button>
+          </>
         )}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
               <User className="w-4 h-4" />
-              Minha Conta
+              <span className="hidden sm:inline">Minha Conta</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
