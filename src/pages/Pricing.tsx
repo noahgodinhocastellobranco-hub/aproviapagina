@@ -292,26 +292,21 @@ const Pricing = () => {
                           <p className="text-sm font-semibold text-accent">Plano Ativo!</p>
                         </div>
                       </div>
-                    ) : !user ? (
-                      <Button 
-                        size="lg" 
-                        className="w-full"
-                        asChild
-                      >
-                        <Link to="/auth">
-                          Login / Criar Conta
-                          <Sparkles className="ml-2 h-4 w-4" />
-                        </Link>
-                      </Button>
                     ) : (
                       <Button 
                         size="lg" 
                         className="w-full"
-                        onClick={() => handleCheckout(plan.priceId)}
+                        onClick={() => {
+                          if (!user) {
+                            navigate("/auth");
+                          } else {
+                            handleCheckout(plan.priceId);
+                          }
+                        }}
                         disabled={isLoading}
                       >
-                        {isLoading ? "Processando..." : "Assinar Agora"}
-                        {!isLoading && <Sparkles className="ml-2 h-4 w-4" />}
+                        {isLoading ? "Processando..." : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
+                        <Sparkles className="ml-2 h-4 w-4" />
                       </Button>
                     )}
                   </div>
