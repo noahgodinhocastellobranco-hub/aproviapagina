@@ -1,21 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Sparkles, ArrowLeft, LogOut, AlertCircle, Loader2 } from "lucide-react";
+import { Check, Sparkles, ArrowLeft, LogOut, Loader2, Settings } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +12,6 @@ const Pricing = () => {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [email, setEmail] = useState("");
   const [user, setUser] = useState<any>(null);
-  const [isCanceling, setIsCanceling] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -35,28 +23,6 @@ const Pricing = () => {
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
       toast.error("Erro ao fazer logout");
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    setIsCanceling(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("cancel-subscription");
-      
-      if (error) throw error;
-
-      if (data?.success) {
-        toast.success("Plano cancelado com sucesso!");
-        setHasSubscription(false);
-        await checkSubscription();
-      } else {
-        throw new Error(data?.error || "Erro ao cancelar plano");
-      }
-    } catch (error) {
-      console.error("Erro ao cancelar plano:", error);
-      toast.error(error instanceof Error ? error.message : "Erro ao cancelar plano");
-    } finally {
-      setIsCanceling(false);
     }
   };
 
@@ -355,38 +321,17 @@ const Pricing = () => {
                       </Link>
                     </Button>
                     
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          size="lg" 
-                          variant="destructive"
-                          className="flex-1"
-                          disabled={isCanceling}
-                        >
-                          {isCanceling ? "Cancelando..." : "Cancelar Plano"}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-destructive" />
-                            Cancelar Plano
-                          </AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Tem certeza que deseja cancelar seu plano? Você perderá acesso a todos os recursos da plataforma imediatamente.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Voltar</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleCancelSubscription}
-                            className="bg-destructive hover:bg-destructive/90"
-                          >
-                            Sim, cancelar plano
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button 
+                      size="lg" 
+                      variant="secondary"
+                      className="flex-1"
+                      asChild
+                    >
+                      <Link to="/settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Configurações
+                      </Link>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
