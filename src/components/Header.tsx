@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings, ExternalLink, X, LayoutDashboard } from "lucide-react";
+import { LogOut, User, Settings, ExternalLink, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -227,14 +227,15 @@ const Header = () => {
             </Button>
 
             <Button 
-              variant="destructive" 
+              variant="outline" 
               size="sm" 
               className="gap-2"
-              onClick={handleCancelSubscription}
+              asChild
             >
-              <X className="w-4 h-4" />
-              <span className="hidden sm:inline">Cancelar Assinatura</span>
-              <span className="sm:hidden">Cancelar</span>
+              <Link to="/settings">
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">Configurações</span>
+              </Link>
             </Button>
           </>
         )}
