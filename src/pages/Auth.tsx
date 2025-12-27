@@ -18,15 +18,19 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const checkUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) return;
+    let isMounted = true;
 
+    const checkUser = async (session: any) => {
+      if (!session) {
+        if (isMounted) setIsCheckingAuth(false);
+        return;
+      }
+
+      try {
         console.log("Sessão encontrada:", session.user.email);
         
         // Verificar admin
@@ -41,7 +45,7 @@ const Auth = () => {
 
         if (isAdmin) {
           console.log("Usuário é admin, redirecionando...");
-          navigate("/admin");
+          navigate("/admin", { replace: true });
           return;
         }
 
@@ -53,7 +57,7 @@ const Auth = () => {
 
         if (subError) {
           console.error("Erro ao verificar assinatura:", subError);
-          navigate("/pricing");
+          navigate("/pricing", { replace: true });
           return;
         }
 
@@ -64,27 +68,35 @@ const Auth = () => {
           window.location.href = "https://aprovia.lovable.app";
         } else {
           console.log("Sem assinatura, redirecionando para pricing...");
-          navigate("/pricing");
+          navigate("/pricing", { replace: true });
         }
       } catch (error) {
         console.error("Erro no checkUser:", error);
-        navigate("/pricing");
+        if (isMounted) {
+          navigate("/pricing", { replace: true });
+        }
       }
     };
 
-    // Executar verificação inicial
-    checkUser();
-
-    // Configurar listener de mudanças de autenticação
+    // Configurar listener PRIMEIRO
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
       if (event === 'SIGNED_IN' && session) {
-        // Usar setTimeout para evitar chamadas síncronas dentro do callback
-        setTimeout(() => checkUser(), 0);
+        setTimeout(() => checkUser(session), 0);
+      } else if (event === 'SIGNED_OUT') {
+        if (isMounted) setIsCheckingAuth(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    // DEPOIS verificar sessão existente
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      checkUser(session);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -141,6 +153,18 @@ const Auth = () => {
       }
     }
   };
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Brain className="w-12 h-12 text-primary mx-auto animate-pulse" />
+          <p className="text-muted-foreground">Verificando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
