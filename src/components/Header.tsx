@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings, ExternalLink, LayoutDashboard, Rocket } from "lucide-react";
+import { LogOut, User, Settings, ExternalLink, LayoutDashboard, Rocket, Sparkles } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -219,15 +219,23 @@ const Header = () => {
           </Link>
         </Button>
 
-        {hasSubscription && (
+        {hasSubscription ? (
           <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all relative" asChild>
             <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
-              <span className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
+              <span className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
                 PRO
               </span>
               <Rocket className="w-4 h-4" />
               <span className="hidden sm:inline">Entrar no App</span>
             </a>
+          </Button>
+        ) : (
+          <Button size="sm" variant="outline" className="gap-2 border-primary/50 text-primary hover:bg-primary/10 relative group" asChild>
+            <Link to="/pricing">
+              <Sparkles className="w-4 h-4 group-hover:animate-pulse" />
+              <span className="hidden sm:inline">Assinar PRO</span>
+              <span className="sm:hidden">PRO</span>
+            </Link>
           </Button>
         )}
         
