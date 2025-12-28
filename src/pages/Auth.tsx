@@ -69,7 +69,8 @@ const Auth = () => {
       const isAdmin = await checkAdminWithTimeout();
       if (!isMounted) return;
 
-      navigate(isAdmin ? "/admin" : "/settings", { replace: true });
+      // Admin vai para /admin, usuários comuns vão para página inicial
+      navigate(isAdmin ? "/admin" : "/", { replace: true });
     };
 
     // Configurar listener PRIMEIRO
