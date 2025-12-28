@@ -219,12 +219,14 @@ const Header = () => {
           </Link>
         </Button>
 
-        <Button size="sm" className="gap-2" asChild>
-          <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
-            <Rocket className="w-4 h-4" />
-            <span className="hidden sm:inline">Entrar no App</span>
-          </a>
-        </Button>
+        {hasSubscription && (
+          <Button size="sm" className="gap-2" asChild>
+            <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
+              <Rocket className="w-4 h-4" />
+              <span className="hidden sm:inline">Entrar no App</span>
+            </a>
+          </Button>
+        )}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
