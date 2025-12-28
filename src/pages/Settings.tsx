@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, LogOut, User, CreditCard, Bell, Shield, Loader2, AlertCircle, Settings as SettingsIcon, Key, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, Bell, Shield, Loader2, AlertCircle, Settings as SettingsIcon, Key, Eye, EyeOff, Mail } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { z } from "zod";
 
 const passwordSchema = z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres" });
+const emailSchema = z.string().email({ message: "Email inválido" });
 
 const Settings = () => {
   const [user, setUser] = useState<any>(null);
@@ -34,6 +35,9 @@ const Settings = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [isChangingEmail, setIsChangingEmail] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -172,12 +176,52 @@ const Settings = () => {
       if (error.message?.includes("same_password")) {
         toast.error("A nova senha não pode ser igual à anterior");
       } else {
-        toast.error("Erro ao alterar senha. Tente novamente.");
-      }
-    } finally {
-      setIsChangingPassword(false);
+      toast.error("Erro ao alterar senha. Tente novamente.");
     }
-  };
+  } finally {
+    setIsChangingPassword(false);
+  }
+};
+
+const handleChangeEmail = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  try {
+    emailSchema.parse(newEmail);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      toast.error(error.errors[0].message);
+      return;
+    }
+  }
+
+  if (newEmail === user?.email) {
+    toast.error("O novo email não pode ser igual ao atual");
+    return;
+  }
+
+  setIsChangingEmail(true);
+  try {
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail
+    });
+
+    if (error) throw error;
+
+    toast.success("Um link de confirmação foi enviado para o novo email!");
+    setNewEmail("");
+    setShowEmailForm(false);
+  } catch (error: any) {
+    console.error("Erro ao alterar email:", error);
+    if (error.message?.includes("email_exists")) {
+      toast.error("Este email já está em uso");
+    } else {
+      toast.error("Erro ao alterar email. Tente novamente.");
+    }
+  } finally {
+    setIsChangingEmail(false);
+  }
+};
 
   if (isLoading) {
     return (
@@ -236,6 +280,61 @@ const Settings = () => {
                 {user?.created_at ? new Date(user.created_at).toLocaleDateString("pt-BR") : "—"}
               </p>
             </div>
+
+            <Separator />
+
+            {/* Alterar Email */}
+            {!showEmailForm ? (
+              <Button variant="outline" className="w-full" onClick={() => setShowEmailForm(true)}>
+                <Mail className="w-4 h-4 mr-2" />
+                Alterar Email
+              </Button>
+            ) : (
+              <form onSubmit={handleChangeEmail} className="space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="newEmail" className="text-sm font-medium">
+                    Novo Email
+                  </label>
+                  <Input
+                    id="newEmail"
+                    type="email"
+                    placeholder="novoemail@exemplo.com"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    disabled={isChangingEmail}
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Você receberá um link de confirmação no novo email.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setShowEmailForm(false);
+                      setNewEmail("");
+                    }}
+                    disabled={isChangingEmail}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={isChangingEmail}>
+                    {isChangingEmail ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Enviando...
+                      </>
+                    ) : (
+                      "Enviar Confirmação"
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
           </CardContent>
         </Card>
 
