@@ -20,6 +20,7 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,52 +32,22 @@ const Auth = () => {
         return;
       }
 
+      // Após login: sempre levar para Configurações (admin vai para /admin)
       try {
-        console.log("Sessão encontrada:", session.user.email);
-        
-        // Verificar admin
-        const { data: isAdmin, error: adminError } = await supabase.rpc('has_role', {
+        const { data: isAdmin } = await supabase.rpc("has_role", {
           _user_id: session.user.id,
-          _role: 'admin'
+          _role: "admin",
         });
 
-        if (adminError) {
-          console.error("Erro ao verificar admin:", adminError);
-        }
-
         if (isAdmin) {
-          console.log("Usuário é admin, redirecionando...");
           navigate("/admin", { replace: true });
           return;
         }
-
-        // Verificar assinatura
-        console.log("Verificando assinatura...");
-        const { data: subData, error: subError } = await supabase.functions.invoke('check-subscription', {
-          headers: { Authorization: `Bearer ${session.access_token}` }
-        });
-
-        if (subError) {
-          console.error("Erro ao verificar assinatura:", subError);
-          navigate("/settings", { replace: true });
-          return;
-        }
-
-        console.log("Resposta da assinatura:", subData);
-
-        if (subData?.hasSubscription) {
-          console.log("Tem assinatura, redirecionando para configurações...");
-          navigate("/settings", { replace: true });
-        } else {
-          console.log("Sem assinatura, redirecionando para pricing...");
-          navigate("/pricing", { replace: true });
-        }
-      } catch (error) {
-        console.error("Erro no checkUser:", error);
-        if (isMounted) {
-          navigate("/settings", { replace: true });
-        }
+      } catch {
+        // se falhar a verificação, segue para configurações
       }
+
+      navigate("/settings", { replace: true });
     };
 
     // Configurar listener PRIMEIRO
@@ -102,11 +73,15 @@ const Auth = () => {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isLoading) return;
-    
+
+    setFormError(null);
+
     if (!email || !password || (!isLogin && !fullName)) {
-      toast.error("Preencha todos os campos");
+      const msg = "Preencha todos os campos";
+      setFormError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -116,7 +91,9 @@ const Auth = () => {
       if (!isLogin) nameSchema.parse(fullName);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+        const msg = error.errors[0].message;
+        setFormError(msg);
+        toast.error(msg);
       }
       return;
     }
@@ -142,14 +119,19 @@ const Auth = () => {
       }
     } catch (error: any) {
       setIsLoading(false);
-      if (error.message.includes("User already registered")) {
-        toast.error("Email já cadastrado. Faça login.");
+
+      const raw = String(error?.message || "");
+      let msg = error?.message || "Erro na autenticação";
+
+      if (raw.includes("User already registered")) {
+        msg = "Email já cadastrado. Faça login.";
         setIsLogin(true);
-      } else if (error.message.includes("Invalid login credentials")) {
-        toast.error("Email ou senha incorretos");
-      } else {
-        toast.error(error.message || "Erro na autenticação");
+      } else if (raw.includes("Invalid login credentials")) {
+        msg = "Email ou senha incorretos";
       }
+
+      setFormError(msg);
+      toast.error(msg);
     }
   };
 
@@ -220,6 +202,12 @@ const Auth = () => {
             </CardHeader>
             
             <CardContent className="pt-4">
+              {formError && (
+                <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                  {formError}
+                </div>
+              )}
+
               <form onSubmit={handleAuth} className="space-y-5">
                 {!isLogin && (
                   <div className="space-y-2">
@@ -308,7 +296,10 @@ const Auth = () => {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setIsLogin(!isLogin)}
+                  onClick={() => {
+                    setFormError(null);
+                    setIsLogin(!isLogin);
+                  }}
                   className="mt-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
                   disabled={isLoading}
                 >
