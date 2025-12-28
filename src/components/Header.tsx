@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings, ExternalLink, LayoutDashboard, Rocket, Sparkles } from "lucide-react";
+import { LogOut, User, Settings, ExternalLink, LayoutDashboard, Rocket, Sparkles, Moon, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTheme } from "@/hooks/use-theme";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +19,7 @@ const Header = () => {
   const [hasSubscription, setHasSubscription] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -194,10 +196,26 @@ const Header = () => {
     }
   };
 
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark");
+  };
+
   if (!user) {
     return (
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container px-4 py-4 flex justify-end">
+        <div className="container px-4 py-4 flex justify-end items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="rounded-full"
+          >
+            {resolvedTheme === "dark" ? (
+              <Sun className="w-5 h-5" />
+            ) : (
+              <Moon className="w-5 h-5" />
+            )}
+          </Button>
           <Button variant="outline" asChild>
             <Link to="/auth">Login / Criar Conta</Link>
           </Button>
@@ -212,6 +230,20 @@ const Header = () => {
         <span className="text-sm text-muted-foreground hidden sm:inline">
           {user.email}
         </span>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+          className="rounded-full"
+        >
+          {resolvedTheme === "dark" ? (
+            <Sun className="w-5 h-5" />
+          ) : (
+            <Moon className="w-5 h-5" />
+          )}
+        </Button>
+
         <Button variant="outline" size="sm" className="gap-2" asChild>
           <Link to="/settings">
             <Settings className="w-4 h-4" />
