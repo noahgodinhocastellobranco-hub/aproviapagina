@@ -37,46 +37,67 @@ const Settings = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const initAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        navigate("/auth");
-        return;
+    let isMounted = true;
+
+    const checkSubscription = async (accessToken: string) => {
+      try {
+        const { data, error } = await supabase.functions.invoke("check-subscription", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error("Erro ao verificar assinatura:", error);
+        } else {
+          setHasSubscription(data?.hasSubscription || false);
+          setSubscriptionEnd(data?.subscriptionEnd || null);
+        }
+      } catch (error) {
+        console.error("Erro ao verificar assinatura:", error);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
-      setUser(session.user);
-      await checkSubscription(session.access_token);
+    };
+
+    const initAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        if (!session?.user) {
+          navigate("/auth");
+          return;
+        }
+        setUser(session.user);
+        await checkSubscription(session.access_token);
+      } catch (error) {
+        console.error("Erro ao iniciar auth:", error);
+        if (isMounted) setIsLoading(false);
+      }
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
       if (!session) {
         navigate("/auth");
         return;
       }
       setUser(session.user);
-      setTimeout(() => checkSubscription(session.access_token), 0);
+      // Defer to avoid deadlock
+      setTimeout(() => {
+        if (isMounted) checkSubscription(session.access_token);
+      }, 0);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
-
-  const checkSubscription = async (accessToken: string) => {
-    try {
-      const { data, error } = await supabase.functions.invoke("check-subscription", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-
-      if (error) throw error;
-
-      setHasSubscription(data?.hasSubscription || false);
-      setSubscriptionEnd(data?.subscriptionEnd || null);
-    } catch (error) {
-      console.error("Erro ao verificar assinatura:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     try {
