@@ -3,9 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { Brain, Sparkles, ArrowLeft, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { Brain, Sparkles, ArrowLeft, Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email({ message: "Email inválido" });
@@ -21,6 +29,11 @@ const Auth = () => {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,30 +45,40 @@ const Auth = () => {
         return;
       }
 
-      // Após login: sempre levar para Configurações (admin vai para /admin)
-      try {
-        const { data: isAdmin } = await supabase.rpc("has_role", {
-          _user_id: session.user.id,
-          _role: "admin",
-        });
+      // Evita travar indefinidamente no "Verificando..." se algo falhar
+      if (isMounted) setIsCheckingAuth(false);
 
-        if (isAdmin) {
-          navigate("/admin", { replace: true });
-          return;
+      const checkAdminWithTimeout = async () => {
+        try {
+          const result = await Promise.race([
+            supabase.rpc("has_role", {
+              _user_id: session.user.id,
+              _role: "admin",
+            }),
+            new Promise<{ data: boolean; error: null }>((resolve) =>
+              setTimeout(() => resolve({ data: false, error: null }), 2500),
+            ),
+          ]);
+
+          return !result?.error && !!result?.data;
+        } catch {
+          return false;
         }
-      } catch {
-        // se falhar a verificação, segue para configurações
-      }
+      };
 
-      navigate("/settings", { replace: true });
+      const isAdmin = await checkAdminWithTimeout();
+      if (!isMounted) return;
+
+      navigate(isAdmin ? "/admin" : "/settings", { replace: true });
     };
 
     // Configurar listener PRIMEIRO
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event);
-      if (event === 'SIGNED_IN' && session) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_IN" && session) {
         setTimeout(() => checkUser(session), 0);
-      } else if (event === 'SIGNED_OUT') {
+      } else if (event === "SIGNED_OUT") {
         if (isMounted) setIsCheckingAuth(false);
       }
     });
@@ -118,8 +141,6 @@ const Auth = () => {
         toast.success("Conta criada!");
       }
     } catch (error: any) {
-      setIsLoading(false);
-
       const raw = String(error?.message || "");
       let msg = error?.message || "Erro na autenticação";
 
@@ -128,10 +149,46 @@ const Auth = () => {
         setIsLogin(true);
       } else if (raw.includes("Invalid login credentials")) {
         msg = "Email ou senha incorretos";
+      } else if (raw.toLowerCase().includes("email not confirmed")) {
+        msg = "Confirme seu email antes de entrar";
       }
 
       setFormError(msg);
       toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSendingReset) return;
+
+    try {
+      emailSchema.parse(resetEmail);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+      } else {
+        toast.error("Email inválido");
+      }
+      return;
+    }
+
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/settings`,
+      });
+      if (error) throw error;
+
+      toast.success("Enviamos um link de recuperação para seu email");
+      setIsResetOpen(false);
+    } catch (error: any) {
+      const msg = error?.message || "Não foi possível enviar o link";
+      toast.error(msg);
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -227,7 +284,7 @@ const Auth = () => {
                     />
                   </div>
                 )}
-                
+
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
                     <Mail className="w-4 h-4 text-muted-foreground" />
@@ -243,7 +300,7 @@ const Auth = () => {
                     className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
                     <Lock className="w-4 h-4 text-muted-foreground" />
@@ -270,9 +327,67 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary" 
+                {isLogin && (
+                  <div className="flex justify-end">
+                    <Dialog
+                      open={isResetOpen}
+                      onOpenChange={(open) => {
+                        setIsResetOpen(open);
+                        if (open) setResetEmail(email);
+                      }}
+                    >
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                          disabled={isLoading}
+                        >
+                          Esqueci minha senha
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Recuperar senha</DialogTitle>
+                          <DialogDescription>
+                            Enviaremos um link para redefinir sua senha.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <form onSubmit={handleForgotPassword} className="space-y-4">
+                          <div className="space-y-2">
+                            <label htmlFor="resetEmail" className="text-sm font-medium">
+                              Email
+                            </label>
+                            <Input
+                              id="resetEmail"
+                              type="email"
+                              placeholder="seu@email.com"
+                              value={resetEmail}
+                              onChange={(e) => setResetEmail(e.target.value)}
+                              disabled={isSendingReset}
+                              required
+                            />
+                          </div>
+
+                          <Button type="submit" className="w-full" disabled={isSendingReset}>
+                            {isSendingReset ? (
+                              <span className="inline-flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Enviando...
+                              </span>
+                            ) : (
+                              "Enviar link"
+                            )}
+                          </Button>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary"
                   size="lg"
                   disabled={isLoading}
                 >
