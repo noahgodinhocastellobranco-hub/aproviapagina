@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, LogOut, User, CreditCard, Bell, Shield, Loader2, AlertCircle, Settings as SettingsIcon, Key, Eye, EyeOff, Mail } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, Bell, Shield, Loader2, AlertCircle, Settings as SettingsIcon, Key, Eye, EyeOff, Mail, Rocket } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -335,6 +335,29 @@ const handleChangeEmail = async (e: React.FormEvent) => {
                 </div>
               </form>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Acessar Aplicativo */}
+        <Card className="border-primary/30 bg-gradient-to-r from-primary/5 to-transparent">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <CardTitle className="text-lg">Acessar Aplicativo</CardTitle>
+                <CardDescription>Entre no app e comece a estudar</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Button asChild className="w-full">
+              <Link to="/app">
+                <Rocket className="w-4 h-4 mr-2" />
+                Entrar no Aplicativo
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
