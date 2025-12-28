@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings, ExternalLink, LayoutDashboard } from "lucide-react";
+import { LogOut, User, Settings, ExternalLink, LayoutDashboard, Rocket } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -217,6 +217,13 @@ const Header = () => {
             <Settings className="w-4 h-4" />
             <span className="hidden sm:inline">Configurações</span>
           </Link>
+        </Button>
+
+        <Button size="sm" className="gap-2" asChild>
+          <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
+            <Rocket className="w-4 h-4" />
+            <span className="hidden sm:inline">Entrar no App</span>
+          </a>
         </Button>
         
         <DropdownMenu>
