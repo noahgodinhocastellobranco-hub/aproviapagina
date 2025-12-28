@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { Brain, Sparkles, ArrowLeft } from "lucide-react";
+import { Brain, Sparkles, ArrowLeft, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 
 const emailSchema = z.string().trim().email({ message: "Email inválido" });
@@ -19,6 +19,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -57,15 +58,15 @@ const Auth = () => {
 
         if (subError) {
           console.error("Erro ao verificar assinatura:", subError);
-          navigate("/pricing", { replace: true });
+          navigate("/settings", { replace: true });
           return;
         }
 
         console.log("Resposta da assinatura:", subData);
 
         if (subData?.hasSubscription) {
-          console.log("Tem assinatura, redirecionando para app...");
-          window.location.href = "https://aprovia.lovable.app";
+          console.log("Tem assinatura, redirecionando para configurações...");
+          navigate("/settings", { replace: true });
         } else {
           console.log("Sem assinatura, redirecionando para pricing...");
           navigate("/pricing", { replace: true });
@@ -73,7 +74,7 @@ const Auth = () => {
       } catch (error) {
         console.error("Erro no checkUser:", error);
         if (isMounted) {
-          navigate("/pricing", { replace: true });
+          navigate("/settings", { replace: true });
         }
       }
     };
@@ -127,19 +128,17 @@ const Auth = () => {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Login realizado!");
-        // O redirecionamento será feito pelo useEffect
       } else {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/pricing`,
+            emailRedirectTo: `${window.location.origin}/settings`,
             data: { full_name: fullName },
           },
         });
         if (error) throw error;
         toast.success("Conta criada!");
-        // O redirecionamento será feito pelo useEffect
       }
     } catch (error: any) {
       setIsLoading(false);
@@ -154,126 +153,176 @@ const Auth = () => {
     }
   };
 
-  // Mostrar loading enquanto verifica autenticação
   if (isCheckingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center">
         <div className="text-center space-y-4">
-          <Brain className="w-12 h-12 text-primary mx-auto animate-pulse" />
-          <p className="text-muted-foreground">Verificando...</p>
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full animate-pulse" />
+            <Brain className="w-16 h-16 text-primary mx-auto relative animate-pulse" />
+          </div>
+          <p className="text-muted-foreground font-medium">Verificando...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      {/* Header com botão voltar */}
-      <div className="container px-4 py-4">
-        <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
-          Voltar
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
+      </div>
+
+      {/* Header */}
+      <div className="container px-4 py-6 relative z-10">
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-all duration-300 group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          <span className="font-medium">Voltar ao início</span>
         </Link>
       </div>
 
-      <div className="flex items-center justify-center p-4">
-        <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center space-y-4">
-          <div className="flex items-center justify-center gap-2">
-            <Brain className="w-10 h-10 text-primary" />
-            <h1 className="text-3xl font-bold text-primary">AprovI.A</h1>
-          </div>
-          <div>
-            <CardTitle className="text-2xl">
-              {isLogin ? "Bem-vindo de volta!" : "Crie sua conta"}
-            </CardTitle>
-            <CardDescription className="mt-2">
-              {isLogin 
-                ? "Entre para continuar seus estudos" 
-                : "Comece a estudar com inteligência artificial"}
-            </CardDescription>
-          </div>
-        </CardHeader>
-        
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
-              <div className="space-y-2">
-                <label htmlFor="fullName" className="text-sm font-medium">
-                  Nome Completo
-                </label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="Seu nome completo"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  disabled={isLoading}
-                  required={!isLogin}
-                />
+      <div className="flex items-center justify-center px-4 pb-12 relative z-10">
+        <div className="w-full max-w-md space-y-8">
+          {/* Logo and welcome */}
+          <div className="text-center space-y-4">
+            <div className="inline-flex items-center justify-center gap-3 mb-2">
+              <div className="relative">
+                <div className="absolute inset-0 bg-primary/30 blur-lg rounded-full" />
+                <Brain className="w-14 h-14 text-primary relative" />
               </div>
-            )}
-            
-            <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                AprovI.A
+              </h1>
             </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
-                Senha
-              </label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                minLength={6}
-              />
-            </div>
-
-            <Button 
-              type="submit" 
-              className="w-full" 
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                "Processando..."
-              ) : (
-                <>
-                  {isLogin ? "Entrar" : "Criar Conta"}
-                  <Sparkles className="ml-2 h-4 w-4" />
-                </>
-              )}
-            </Button>
-          </form>
-
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-primary hover:underline"
-              disabled={isLoading}
-            >
+            <p className="text-muted-foreground text-lg">
               {isLogin 
-                ? "Não tem conta? Criar agora" 
-                : "Já tem conta? Fazer login"}
-            </button>
+                ? "Bem-vindo de volta! Entre para continuar." 
+                : "Crie sua conta e comece a estudar com IA."}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+
+          <Card className="shadow-2xl border-0 bg-card/80 backdrop-blur-sm">
+            <CardHeader className="text-center pb-2">
+              <CardTitle className="text-2xl font-bold">
+                {isLogin ? "Entrar" : "Criar Conta"}
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                {isLogin 
+                  ? "Use suas credenciais para acessar" 
+                  : "Preencha os dados para se cadastrar"}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent className="pt-4">
+              <form onSubmit={handleAuth} className="space-y-5">
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <label htmlFor="fullName" className="text-sm font-medium flex items-center gap-2">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      Nome Completo
+                    </label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={isLoading}
+                      required={!isLogin}
+                      className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                    />
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-muted-foreground" />
+                    Email
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="seu@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading}
+                    className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                    Senha
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading}
+                      minLength={6}
+                      className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors pr-12"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-300 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary" 
+                  size="lg"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+                      Processando...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      {isLogin ? "Entrar na conta" : "Criar minha conta"}
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                  )}
+                </Button>
+              </form>
+
+              <div className="mt-6 pt-6 border-t border-border/50 text-center">
+                <p className="text-sm text-muted-foreground">
+                  {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="mt-1 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
+                  disabled={isLoading}
+                >
+                  {isLogin ? "Criar conta gratuitamente" : "Fazer login"}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Footer info */}
+          <p className="text-center text-xs text-muted-foreground">
+            Ao continuar, você concorda com nossos termos de uso e política de privacidade.
+          </p>
+        </div>
       </div>
     </div>
   );
