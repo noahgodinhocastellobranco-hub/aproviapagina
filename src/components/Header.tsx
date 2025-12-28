@@ -23,11 +23,13 @@ const Header = () => {
   useEffect(() => {
     checkUserAndSubscription();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
-        await checkSubscription();
-        await checkAdminRole(session.user.id);
+        setTimeout(() => {
+          checkSubscription();
+          checkAdminRole(session.user.id);
+        }, 0);
       } else {
         // Limpar tudo quando não há sessão
         setUser(null);
@@ -210,35 +212,12 @@ const Header = () => {
         <span className="text-sm text-muted-foreground hidden sm:inline">
           {user.email}
         </span>
-        
-        {hasSubscription && (
-          <>
-            <Button 
-              variant="default" 
-              size="sm" 
-              className="gap-2 bg-green-600 hover:bg-green-700"
-              asChild
-            >
-              <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="w-4 h-4" />
-                <span className="hidden sm:inline">Acessar Aplicativo</span>
-                <span className="sm:hidden">App</span>
-              </a>
-            </Button>
-
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2"
-              asChild
-            >
-              <Link to="/settings">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Configurações</span>
-              </Link>
-            </Button>
-          </>
-        )}
+        <Button variant="outline" size="sm" className="gap-2" asChild>
+          <Link to="/settings">
+            <Settings className="w-4 h-4" />
+            <span className="hidden sm:inline">Configurações</span>
+          </Link>
+        </Button>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -249,6 +228,13 @@ const Header = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/settings" className="cursor-pointer">
+                <Settings className="w-4 h-4 mr-2" />
+                Configurações
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             {isAdmin && (
               <>
