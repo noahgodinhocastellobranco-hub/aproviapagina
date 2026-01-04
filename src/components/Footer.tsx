@@ -47,9 +47,8 @@ const Footer = () => {
           <div className="border-t pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <p>© 2024 AprovI.A. Todos os direitos reservados.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-primary transition-colors">Instagram</a>
-              <a href="#" className="hover:text-primary transition-colors">Twitter</a>
-              <a href="#" className="hover:text-primary transition-colors">LinkedIn</a>
+              <a href="https://instagram.com/aprovi.a" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">Instagram</a>
+              <a href="https://tiktok.com/@aprovi.a" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">TikTok</a>
             </div>
           </div>
         </div>
