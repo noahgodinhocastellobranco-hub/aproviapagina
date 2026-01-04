@@ -1,13 +1,43 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Helper function to get Cakto access token
+async function getCaktoToken(): Promise<string> {
+  const clientId = Deno.env.get("CAKTO_CLIENT_ID");
+  const clientSecret = Deno.env.get("CAKTO_CLIENT_SECRET");
+
+  if (!clientId || !clientSecret) {
+    throw new Error("Cakto credentials not configured");
+  }
+
+  const response = await fetch("https://api.cakto.com.br/oauth/token/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      grant_type: "client_credentials",
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("[CREATE-CHECKOUT] Token request failed:", errorText);
+    throw new Error(`Failed to get Cakto token: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -15,52 +45,49 @@ serve(async (req) => {
   try {
     console.log("[CREATE-CHECKOUT] Function started");
 
-    const { email, priceId } = await req.json();
+    const { email, offerId } = await req.json();
     
     if (!email) {
       throw new Error("Email is required");
     }
 
-    // Use provided priceId or default to monthly plan
-    const selectedPriceId = priceId || "price_1SXRA8KLwUDwjnpN3HbaHAme";
-
-    console.log("[CREATE-CHECKOUT] Email received:", email);
-    console.log("[CREATE-CHECKOUT] Price ID:", selectedPriceId);
-
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
-
-    // Check if a Stripe customer record exists for this email
-    const customers = await stripe.customers.list({ email, limit: 1 });
-    let customerId;
-    
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      console.log("[CREATE-CHECKOUT] Existing customer found:", customerId);
-    } else {
-      console.log("[CREATE-CHECKOUT] No existing customer, will create during checkout");
+    if (!offerId) {
+      throw new Error("Offer ID is required");
     }
 
-    // Create a subscription checkout session
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : email,
-      line_items: [
-        {
-          price: selectedPriceId,
-          quantity: 1,
-        },
-      ],
-      mode: "subscription",
-      success_url: "https://aprovia.lovable.app",
-      cancel_url: `${req.headers.get("origin")}/pricing`,
+    console.log("[CREATE-CHECKOUT] Email:", email);
+    console.log("[CREATE-CHECKOUT] Offer ID:", offerId);
+
+    // Get Cakto access token
+    const accessToken = await getCaktoToken();
+    console.log("[CREATE-CHECKOUT] Got Cakto access token");
+
+    // Create checkout link via Cakto API
+    const checkoutResponse = await fetch("https://api.cakto.com.br/api/checkout-links/", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        offer: offerId,
+        customer_email: email,
+      }),
     });
 
-    console.log("[CREATE-CHECKOUT] Checkout session created:", session.id);
+    if (!checkoutResponse.ok) {
+      const errorText = await checkoutResponse.text();
+      console.error("[CREATE-CHECKOUT] Checkout creation failed:", errorText);
+      throw new Error(`Failed to create checkout: ${checkoutResponse.status}`);
+    }
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    const checkoutData = await checkoutResponse.json();
+    console.log("[CREATE-CHECKOUT] Checkout created:", checkoutData);
+
+    // Cakto returns the checkout URL directly
+    const checkoutUrl = checkoutData.url || checkoutData.checkout_url || `https://pay.cakto.com.br/${checkoutData.id}`;
+
+    return new Response(JSON.stringify({ url: checkoutUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
