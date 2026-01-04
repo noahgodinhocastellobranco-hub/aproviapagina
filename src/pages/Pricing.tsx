@@ -6,11 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-// IDs das ofertas da Cakto - substitua pelos seus IDs reais
-const CAKTO_OFFERS = {
-  monthly: "OFFER_ID_MENSAL", // Substitua pelo ID da oferta mensal na Cakto
-  annual: "OFFER_ID_ANUAL",   // Substitua pelo ID da oferta anual na Cakto
-};
+// ID da oferta da Cakto - substitua pelo seu ID real
+const CAKTO_OFFER_ID = "OFFER_ID_MENSAL"; // Substitua pelo ID da oferta mensal na Cakto
 
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -153,23 +150,15 @@ const Pricing = () => {
     }
   };
 
-  const plans = [
-    {
-      name: "Mensal",
-      price: "24,90",
-      period: "mês",
-      offerId: CAKTO_OFFERS.monthly,
-      description: "Acesso mensal completo"
-    },
-    {
-      name: "Anual",
-      price: "283,86",
-      period: "ano",
-      offerId: CAKTO_OFFERS.annual,
-      description: "Economize 5% com o plano anual",
-      badge: "5% OFF"
-    }
-  ];
+  const plan = {
+    name: "Mensal",
+    originalPrice: "26,21",
+    price: "24,90",
+    period: "mês",
+    offerId: CAKTO_OFFER_ID,
+    description: "Acesso completo à plataforma",
+    badge: "5% OFF"
+  };
 
   const features = [
     "Correção ilimitada de redações com IA",
@@ -244,69 +233,66 @@ const Pricing = () => {
             </div>
           </div>
 
-          {/* Pricing Cards */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {plans.map((plan) => (
-              <Card key={plan.offerId} className={`border-2 ${plan.badge ? 'border-primary shadow-2xl' : 'border-primary/20 shadow-lg'} relative`}>
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
-                      {plan.badge}
-                    </div>
+          {/* Pricing Card */}
+          <div className="max-w-md mx-auto">
+            <Card className="border-2 border-primary shadow-2xl relative">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
+                  {plan.badge}
+                </div>
+              </div>
+              
+              <CardHeader className="text-center pb-6 pt-8">
+                <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
+                <CardDescription>{plan.description}</CardDescription>
+              </CardHeader>
+              
+              <CardContent className="space-y-6">
+                {/* Price */}
+                <div className="text-center py-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg">
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-lg text-muted-foreground line-through">R$ {plan.originalPrice}</span>
+                    <span className="text-4xl md:text-5xl font-bold text-primary">R$ {plan.price}</span>
                   </div>
-                )}
-                
-                <CardHeader className="text-center pb-6 pt-8">
-                  <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
-                
-                <CardContent className="space-y-6">
-                  {/* Price */}
-                  <div className="text-center py-6 bg-gradient-to-br from-primary/5 to-primary/10 rounded-lg">
-                    <div className="flex items-baseline justify-center gap-2">
-                      <span className="text-4xl md:text-5xl font-bold text-primary">R$ {plan.price}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      por {plan.period}
-                    </p>
-                  </div>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    por {plan.period}
+                  </p>
+                </div>
 
-                  {/* CTA Button */}
-                  <div className="space-y-4">
-                    {isCheckingSubscription ? (
-                      <div className="text-center py-8">
-                        <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
-                        <p className="text-muted-foreground text-sm font-medium">Verificando seu plano...</p>
+                {/* CTA Button */}
+                <div className="space-y-4">
+                  {isCheckingSubscription ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-3" />
+                      <p className="text-muted-foreground text-sm font-medium">Verificando seu plano...</p>
+                    </div>
+                  ) : hasSubscription ? (
+                    <div className="space-y-3">
+                      <div className="bg-accent/10 border border-accent rounded-lg p-4 text-center">
+                        <Check className="w-8 h-8 text-accent mx-auto mb-2" />
+                        <p className="text-sm font-semibold text-accent">Plano Ativo!</p>
                       </div>
-                    ) : hasSubscription ? (
-                      <div className="space-y-3">
-                        <div className="bg-accent/10 border border-accent rounded-lg p-4 text-center">
-                          <Check className="w-8 h-8 text-accent mx-auto mb-2" />
-                          <p className="text-sm font-semibold text-accent">Plano Ativo!</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button 
-                        size="lg" 
-                        className="w-full"
-                        onClick={() => {
-                          if (!user) {
-                            navigate("/auth");
-                          } else {
-                            handleCheckout(plan.offerId);
-                          }
-                        }}
-                        disabled={isLoading}
-                      >
-                        {isLoading ? "Processando..." : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
-                        <Sparkles className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    </div>
+                  ) : (
+                    <Button 
+                      size="lg" 
+                      className="w-full"
+                      onClick={() => {
+                        if (!user) {
+                          navigate("/auth");
+                        } else {
+                          handleCheckout(plan.offerId);
+                        }
+                      }}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? "Processando..." : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
+                      <Sparkles className="ml-2 h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Subscription Management */}
