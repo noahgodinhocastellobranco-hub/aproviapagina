@@ -6,8 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
-// ID da oferta da Cakto - substitua pelo seu ID real
-const CAKTO_OFFER_ID = "OFFER_ID_MENSAL"; // Substitua pelo ID da oferta mensal na Cakto
+// ID da oferta da Cakto
+const CAKTO_OFFER_ID = "3c7yw4k_710255";
 
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
