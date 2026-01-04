@@ -256,7 +256,7 @@ const Header = () => {
 
         {hasSubscription ? (
           <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all relative" asChild>
-            <a href="https://aprovia.lovable.app" target="_blank" rel="noopener noreferrer">
+            <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
               <span className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
                 PRO
               </span>
