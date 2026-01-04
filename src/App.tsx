@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import Settings from "./pages/Settings";
 import Application from "./pages/Application";
 import Success from "./pages/Success";
+import Quiz from "./pages/Quiz";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/settings" element={<Settings />} />
             <Route path="/app" element={<Application />} />
             <Route path="/success" element={<Success />} />
+            <Route path="/quiz" element={<Quiz />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
 
             <Route path="*" element={<NotFound />} />

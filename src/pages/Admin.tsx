@@ -13,6 +13,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
@@ -27,7 +28,8 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ClipboardList
 } from "lucide-react";
 
 interface UserData {
@@ -49,13 +51,50 @@ interface DashboardData {
   total_subscriptions: number;
 }
 
+interface QuizResponse {
+  id: string;
+  user_email: string;
+  how_found_us: string | null;
+  objective: string | null;
+  done_enem_before: string | null;
+  skipped: boolean;
+  created_at: string;
+}
+
+const howFoundUsLabels: Record<string, string> = {
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  amigos: "Indicação de amigos",
+  google: "Pesquisa no Google",
+  youtube: "YouTube",
+  outro: "Outro",
+};
+
+const objectiveLabels: Record<string, string> = {
+  medicina: "Passar em Medicina",
+  direito: "Passar em Direito",
+  engenharia: "Passar em Engenharia",
+  federal: "Entrar em universidade federal",
+  bolsa: "Conseguir bolsa (ProUni/FIES)",
+  melhorar_nota: "Melhorar minha nota",
+};
+
+const doneEnemLabels: Record<string, string> = {
+  nunca: "Nunca fiz",
+  uma_vez: "Sim, uma vez",
+  duas_vezes: "Sim, duas vezes",
+  tres_ou_mais: "Sim, três vezes ou mais",
+};
+
 const Admin = () => {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [quizResponses, setQuizResponses] = useState<QuizResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userFilter, setUserFilter] = useState<"all" | "subscribed" | "free">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("users");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -86,6 +125,7 @@ const Admin = () => {
 
       setIsAdmin(true);
       await fetchDashboardData();
+      await fetchQuizResponses();
     } catch (error) {
       toast.error("Erro ao verificar permissões");
       navigate("/");
@@ -107,10 +147,39 @@ const Admin = () => {
     }
   };
 
+  const fetchQuizResponses = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("quiz_responses")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      setQuizResponses(data || []);
+    } catch (error) {
+      console.error("Erro ao carregar respostas do quiz:", error);
+    }
+  };
+
+  const handleRefresh = async () => {
+    await fetchDashboardData();
+    await fetchQuizResponses();
+  };
+
   const formatShortDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "2-digit",
+    });
+  };
+
+  const formatFullDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -161,7 +230,7 @@ const Admin = () => {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={fetchDashboardData}
+                onClick={handleRefresh}
                 disabled={refreshing}
                 className="gap-2"
               >
@@ -198,135 +267,234 @@ const Admin = () => {
           </CardContent>
         </Card>
 
-        {/* Lista de Usuários */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row gap-4 justify-between">
-              <div>
-                <CardTitle>Usuários</CardTitle>
-                <CardDescription>
-                  {filteredUsers.length} usuário(s) encontrado(s)
-                </CardDescription>
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar por email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-full sm:w-64"
-                  />
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList>
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="w-4 h-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="quiz" className="gap-2">
+              <ClipboardList className="w-4 h-4" />
+              Respostas do Quiz
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="mt-6">
+            <Card>
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                  <div>
+                    <CardTitle>Usuários</CardTitle>
+                    <CardDescription>
+                      {filteredUsers.length} usuário(s) encontrado(s)
+                    </CardDescription>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por email..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 w-full sm:w-64"
+                      />
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        variant={userFilter === "all" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setUserFilter("all")}
+                      >
+                        Todos
+                      </Button>
+                      <Button
+                        variant={userFilter === "subscribed" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setUserFilter("subscribed")}
+                      >
+                        <UserCheck className="w-4 h-4 mr-1" />
+                        Premium
+                      </Button>
+                      <Button
+                        variant={userFilter === "free" ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setUserFilter("free")}
+                      >
+                        <UserX className="w-4 h-4 mr-1" />
+                        Free
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant={userFilter === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setUserFilter("all")}
-                  >
-                    Todos
-                  </Button>
-                  <Button
-                    variant={userFilter === "subscribed" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setUserFilter("subscribed")}
-                  >
-                    <UserCheck className="w-4 h-4 mr-1" />
-                    Premium
-                  </Button>
-                  <Button
-                    variant={userFilter === "free" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setUserFilter("free")}
-                  >
-                    <UserX className="w-4 h-4 mr-1" />
-                    Free
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {filteredUsers.length === 0 ? (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">Nenhum usuário encontrado</p>
-              </div>
-            ) : (
-              <div className="rounded-lg border overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-muted/50">
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>Cadastro</TableHead>
-                      <TableHead>Último Acesso</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Assinatura</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                              <span className="text-xs font-medium text-primary">
-                                {user.email.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <span className="font-medium">{user.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            {formatShortDate(user.created_at)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Clock className="w-3 h-3" />
-                            {user.last_sign_in_at ? formatShortDate(user.last_sign_in_at) : "Nunca"}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {user.subscription ? (
-                            <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">
-                              <CheckCircle2 className="w-3 h-3 mr-1" />
-                              Ativo
-                            </Badge>
-                          ) : (
-                            <Badge variant="secondary">
-                              <XCircle className="w-3 h-3 mr-1" />
-                              Free
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {user.subscription ? (
-                            <div className="space-y-1">
-                              <p className="text-xs">
-                                Válido até: {formatShortDate(user.subscription.current_period_end)}
-                              </p>
-                              {user.subscription.cancel_at_period_end && (
-                                <Badge variant="destructive" className="text-xs">
-                                  <AlertCircle className="w-3 h-3 mr-1" />
-                                  Cancelará
+              </CardHeader>
+              <CardContent>
+                {filteredUsers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nenhum usuário encontrado</p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Usuário</TableHead>
+                          <TableHead>Cadastro</TableHead>
+                          <TableHead>Último Acesso</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Assinatura</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-xs font-medium text-primary">
+                                    {user.email.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <span className="font-medium">{user.email}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                {formatShortDate(user.created_at)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Clock className="w-3 h-3" />
+                                {user.last_sign_in_at ? formatShortDate(user.last_sign_in_at) : "Nunca"}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {user.subscription ? (
+                                <Badge className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-0">
+                                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                                  Ativo
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary">
+                                  <XCircle className="w-3 h-3 mr-1" />
+                                  Free
                                 </Badge>
                               )}
-                            </div>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                            </TableCell>
+                            <TableCell>
+                              {user.subscription ? (
+                                <div className="space-y-1">
+                                  <p className="text-xs">
+                                    Válido até: {formatShortDate(user.subscription.current_period_end)}
+                                  </p>
+                                  {user.subscription.cancel_at_period_end && (
+                                    <Badge variant="destructive" className="text-xs">
+                                      <AlertCircle className="w-3 h-3 mr-1" />
+                                      Cancelará
+                                    </Badge>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Quiz Responses Tab */}
+          <TabsContent value="quiz" className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Respostas do Quiz de Onboarding</CardTitle>
+                <CardDescription>
+                  {quizResponses.length} resposta(s) registrada(s)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {quizResponses.length === 0 ? (
+                  <div className="text-center py-12">
+                    <ClipboardList className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nenhuma resposta ainda</p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Usuário</TableHead>
+                          <TableHead>Como nos conheceu?</TableHead>
+                          <TableHead>Objetivo</TableHead>
+                          <TableHead>Fez ENEM antes?</TableHead>
+                          <TableHead>Data</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {quizResponses.map((response) => (
+                          <TableRow key={response.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                                  <span className="text-xs font-medium text-primary">
+                                    {response.user_email.charAt(0).toUpperCase()}
+                                  </span>
+                                </div>
+                                <span className="font-medium text-sm">{response.user_email}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {response.how_found_us ? (
+                                <Badge variant="outline">
+                                  {howFoundUsLabels[response.how_found_us] || response.how_found_us}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Pulou</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {response.objective ? (
+                                <Badge variant="outline">
+                                  {objectiveLabels[response.objective] || response.objective}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Pulou</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {response.done_enem_before ? (
+                                <Badge variant="outline">
+                                  {doneEnemLabels[response.done_enem_before] || response.done_enem_before}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">Pulou</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                {formatFullDate(response.created_at)}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

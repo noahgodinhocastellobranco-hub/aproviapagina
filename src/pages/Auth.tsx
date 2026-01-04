@@ -70,8 +70,21 @@ const Auth = () => {
       const isAdmin = await checkAdminWithTimeout();
       if (!isMounted) return;
 
-      // Admin vai para /admin, usuários comuns vão para página inicial
-      navigate(isAdmin ? "/admin" : "/", { replace: true });
+      // Check if user has completed quiz
+      const { data: quizData } = await supabase
+        .from("quiz_responses")
+        .select("id")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      // Admin vai para /admin, usuários sem quiz vão para /quiz, outros para /
+      if (isAdmin) {
+        navigate("/admin", { replace: true });
+      } else if (!quizData) {
+        navigate("/quiz", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     };
 
     // Configurar listener PRIMEIRO

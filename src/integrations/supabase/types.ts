@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      quiz_responses: {
+        Row: {
+          created_at: string
+          done_enem_before: string | null
+          how_found_us: string | null
+          id: string
+          objective: string | null
+          skipped: boolean | null
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          done_enem_before?: string | null
+          how_found_us?: string | null
+          id?: string
+          objective?: string | null
+          skipped?: boolean | null
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          done_enem_before?: string | null
+          how_found_us?: string | null
+          id?: string
+          objective?: string | null
+          skipped?: boolean | null
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_reply: string | null
