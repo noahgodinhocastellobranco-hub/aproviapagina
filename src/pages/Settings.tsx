@@ -31,12 +31,16 @@ const Settings = () => {
   const [isCanceling, setIsCanceling] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [newEmail, setNewEmail] = useState("");
+  const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState("");
+  const [showCurrentPasswordForEmail, setShowCurrentPasswordForEmail] = useState(false);
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const navigate = useNavigate();
 
@@ -159,8 +163,25 @@ const Settings = () => {
       return;
     }
 
+    if (!currentPassword) {
+      toast.error("Digite sua senha atual");
+      return;
+    }
+
     setIsChangingPassword(true);
     try {
+      // Verify current password first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email,
+        password: currentPassword,
+      });
+
+      if (signInError) {
+        toast.error("Senha atual incorreta");
+        return;
+      }
+
+      // Update to new password
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
@@ -168,6 +189,7 @@ const Settings = () => {
       if (error) throw error;
 
       toast.success("Senha alterada com sucesso!");
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
       setShowPasswordForm(false);
@@ -176,52 +198,69 @@ const Settings = () => {
       if (error.message?.includes("same_password")) {
         toast.error("A nova senha não pode ser igual à anterior");
       } else {
-      toast.error("Erro ao alterar senha. Tente novamente.");
+        toast.error("Erro ao alterar senha. Tente novamente.");
+      }
+    } finally {
+      setIsChangingPassword(false);
     }
-  } finally {
-    setIsChangingPassword(false);
-  }
-};
+  };
 
-const handleChangeEmail = async (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  try {
-    emailSchema.parse(newEmail);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      toast.error(error.errors[0].message);
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      emailSchema.parse(newEmail);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        toast.error(error.errors[0].message);
+        return;
+      }
+    }
+
+    if (newEmail === user?.email) {
+      toast.error("O novo email não pode ser igual ao atual");
       return;
     }
-  }
 
-  if (newEmail === user?.email) {
-    toast.error("O novo email não pode ser igual ao atual");
-    return;
-  }
-
-  setIsChangingEmail(true);
-  try {
-    const { error } = await supabase.auth.updateUser({
-      email: newEmail
-    });
-
-    if (error) throw error;
-
-    toast.success("Um link de confirmação foi enviado para o novo email!");
-    setNewEmail("");
-    setShowEmailForm(false);
-  } catch (error: any) {
-    console.error("Erro ao alterar email:", error);
-    if (error.message?.includes("email_exists")) {
-      toast.error("Este email já está em uso");
-    } else {
-      toast.error("Erro ao alterar email. Tente novamente.");
+    if (!currentPasswordForEmail) {
+      toast.error("Digite sua senha atual");
+      return;
     }
-  } finally {
-    setIsChangingEmail(false);
-  }
-};
+
+    setIsChangingEmail(true);
+    try {
+      // Verify current password first
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email,
+        password: currentPasswordForEmail,
+      });
+
+      if (signInError) {
+        toast.error("Senha atual incorreta");
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        email: newEmail
+      });
+
+      if (error) throw error;
+
+      toast.success("Um link de confirmação foi enviado para o novo email!");
+      setNewEmail("");
+      setCurrentPasswordForEmail("");
+      setShowEmailForm(false);
+    } catch (error: any) {
+      console.error("Erro ao alterar email:", error);
+      if (error.message?.includes("email_exists")) {
+        toast.error("Este email já está em uso");
+      } else {
+        toast.error("Erro ao alterar email. Tente novamente.");
+      }
+    } finally {
+      setIsChangingEmail(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -292,6 +331,30 @@ const handleChangeEmail = async (e: React.FormEvent) => {
             ) : (
               <form onSubmit={handleChangeEmail} className="space-y-4">
                 <div className="space-y-2">
+                  <label htmlFor="currentPasswordForEmail" className="text-sm font-medium">
+                    Senha Atual
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="currentPasswordForEmail"
+                      type={showCurrentPasswordForEmail ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={currentPasswordForEmail}
+                      onChange={(e) => setCurrentPasswordForEmail(e.target.value)}
+                      disabled={isChangingEmail}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowCurrentPasswordForEmail(!showCurrentPasswordForEmail)}
+                    >
+                      {showCurrentPasswordForEmail ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <label htmlFor="newEmail" className="text-sm font-medium">
                     Novo Email
                   </label>
@@ -317,6 +380,7 @@ const handleChangeEmail = async (e: React.FormEvent) => {
                     onClick={() => {
                       setShowEmailForm(false);
                       setNewEmail("");
+                      setCurrentPasswordForEmail("");
                     }}
                     disabled={isChangingEmail}
                   >
@@ -468,6 +532,30 @@ const handleChangeEmail = async (e: React.FormEvent) => {
             ) : (
               <form onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
+                  <label htmlFor="currentPassword" className="text-sm font-medium">
+                    Senha Atual
+                  </label>
+                  <div className="relative">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      disabled={isChangingPassword}
+                      required
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <label htmlFor="newPassword" className="text-sm font-medium">
                     Nova Senha
                   </label>
@@ -524,6 +612,7 @@ const handleChangeEmail = async (e: React.FormEvent) => {
                     className="flex-1"
                     onClick={() => {
                       setShowPasswordForm(false);
+                      setCurrentPassword("");
                       setNewPassword("");
                       setConfirmPassword("");
                     }}
