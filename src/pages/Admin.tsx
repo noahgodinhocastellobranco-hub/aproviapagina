@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Shield, Users, CreditCard, TrendingUp } from "lucide-react";
+import AdminSupport from "@/components/AdminSupport";
 import {
   LineChart,
   Line,
@@ -384,6 +385,11 @@ const Admin = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Seção de Suporte */}
+        <div className="mt-8">
+          <AdminSupport />
+        </div>
       </main>
     </div>
   );
