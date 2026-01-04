@@ -6,6 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
+// IDs das ofertas da Cakto - substitua pelos seus IDs reais
+const CAKTO_OFFERS = {
+  monthly: "OFFER_ID_MENSAL", // Substitua pelo ID da oferta mensal na Cakto
+  annual: "OFFER_ID_ANUAL",   // Substitua pelo ID da oferta anual na Cakto
+};
+
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingSubscription, setIsCheckingSubscription] = useState(true);
@@ -45,7 +51,6 @@ const Pricing = () => {
       if (session?.user) {
         setUser(session.user);
         setEmail(session.user.email || "");
-        // Usar setTimeout para evitar chamadas assíncronas dentro do callback
         setTimeout(() => checkSubscription(), 0);
       } else {
         setUser(null);
@@ -112,7 +117,7 @@ const Pricing = () => {
     }
   };
 
-  const handleCheckout = async (priceId: string) => {
+  const handleCheckout = async (offerId: string) => {
     if (!user) {
       toast.error("Você precisa estar logado para assinar");
       navigate("/auth");
@@ -132,7 +137,7 @@ const Pricing = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { email, priceId },
+        body: { email, offerId },
       });
 
       if (error) throw error;
@@ -153,14 +158,14 @@ const Pricing = () => {
       name: "Mensal",
       price: "19,99",
       period: "mês",
-      priceId: "price_1SXRA8KLwUDwjnpN3HbaHAme",
+      offerId: CAKTO_OFFERS.monthly,
       description: "Acesso mensal completo"
     },
     {
       name: "Anual",
       price: "214,92",
       period: "ano",
-      priceId: "price_1SXWaRKLwUDwjnpNckJfkN7N",
+      offerId: CAKTO_OFFERS.annual,
       description: "Economize com o plano anual",
       badge: "Melhor Oferta"
     }
@@ -242,7 +247,7 @@ const Pricing = () => {
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
             {plans.map((plan) => (
-              <Card key={plan.priceId} className={`border-2 ${plan.badge ? 'border-primary shadow-2xl' : 'border-primary/20 shadow-lg'} relative`}>
+              <Card key={plan.offerId} className={`border-2 ${plan.badge ? 'border-primary shadow-2xl' : 'border-primary/20 shadow-lg'} relative`}>
                 {plan.badge && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium">
@@ -289,7 +294,7 @@ const Pricing = () => {
                           if (!user) {
                             navigate("/auth");
                           } else {
-                            handleCheckout(plan.priceId);
+                            handleCheckout(plan.offerId);
                           }
                         }}
                         disabled={isLoading}
