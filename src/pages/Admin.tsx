@@ -198,7 +198,18 @@ const Admin = () => {
   const fetchDashboardData = async () => {
     setRefreshing(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-dashboard");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error("Sessão expirada");
+        navigate("/auth");
+        return;
+      }
+      
+      const { data, error } = await supabase.functions.invoke("admin-dashboard", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
+        }
+      });
       if (error) throw error;
       setDashboardData(data);
     } catch (error) {
