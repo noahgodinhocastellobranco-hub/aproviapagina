@@ -144,7 +144,7 @@ const Auth = () => {
         if (error) throw error;
         toast.success("Login realizado!");
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -154,6 +154,12 @@ const Auth = () => {
         });
         if (error) throw error;
         toast.success("Conta criada!");
+        
+        // Redirecionar imediatamente para o quiz após criar conta
+        if (data.session) {
+          navigate("/quiz", { replace: true });
+          return;
+        }
       }
     } catch (error: any) {
       const raw = String(error?.message || "");
