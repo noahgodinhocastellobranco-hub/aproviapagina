@@ -27,12 +27,10 @@ const Footer = () => {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4">Empresa</h3>
+              <h3 className="font-semibold mb-4">Contato</h3>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors">Sobre Nós</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Carreiras</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Contato</a></li>
+                <li><a href="mailto:suporteaprovia@gmail.com" className="hover:text-primary transition-colors">suporteaprovia@gmail.com</a></li>
+                <li><a href="tel:+5521973781012" className="hover:text-primary transition-colors">+55 21 97378-1012</a></li>
               </ul>
             </div>
 
