@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
+import SupportChat from "@/components/SupportChat";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -250,6 +251,8 @@ const Header = () => {
             <span className="hidden sm:inline">Configurações</span>
           </Link>
         </Button>
+
+        <SupportChat />
 
         {hasSubscription ? (
           <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all relative" asChild>
