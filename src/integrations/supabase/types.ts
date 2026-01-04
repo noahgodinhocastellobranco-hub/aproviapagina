@@ -47,6 +47,57 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number | null
+          cakto_order_id: string | null
+          cakto_subscription_id: string | null
+          cancelled_at: string | null
+          created_at: string
+          currency: string | null
+          expires_at: string | null
+          id: string
+          plan_name: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          cakto_order_id?: string | null
+          cakto_subscription_id?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_name?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          cakto_order_id?: string | null
+          cakto_subscription_id?: string | null
+          cancelled_at?: string | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          id?: string
+          plan_name?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_reply: string | null
