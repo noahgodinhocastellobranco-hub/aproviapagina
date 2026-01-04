@@ -41,7 +41,30 @@ serve(async (req) => {
     }
 
     const userEmail = userData.user.email;
+    const userId = userData.user.id;
     console.log("[CHECK-SUBSCRIPTION] User email:", userEmail);
+
+    // Check if user is admin - admins have permanent free access
+    console.log("[CHECK-SUBSCRIPTION] Checking if user is admin...");
+    const { data: adminRole, error: roleError } = await supabaseClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleError && adminRole) {
+      console.log("[CHECK-SUBSCRIPTION] User is admin - granting permanent access");
+      return new Response(JSON.stringify({ 
+        hasSubscription: true,
+        subscriptionEnd: null,
+        source: "admin",
+        isPermanent: true
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // First, check local subscriptions table (faster and more reliable)
     console.log("[CHECK-SUBSCRIPTION] Checking local database...");
