@@ -156,18 +156,18 @@ const Pricing = () => {
   const plans = [
     {
       name: "Mensal",
-      price: "19,99",
+      price: "24,90",
       period: "mês",
       offerId: CAKTO_OFFERS.monthly,
       description: "Acesso mensal completo"
     },
     {
       name: "Anual",
-      price: "214,92",
+      price: "283,86",
       period: "ano",
       offerId: CAKTO_OFFERS.annual,
-      description: "Economize com o plano anual",
-      badge: "Melhor Oferta"
+      description: "Economize 5% com o plano anual",
+      badge: "5% OFF"
     }
   ];
 
