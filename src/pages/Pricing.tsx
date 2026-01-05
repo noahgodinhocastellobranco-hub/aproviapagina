@@ -283,17 +283,16 @@ const Pricing = () => {
                     <Button 
                       size="lg" 
                       className="w-full"
-                      onClick={() => {
-                        if (!user) {
-                          navigate("/auth");
-                        } else {
-                          handleCheckout();
-                        }
-                      }}
+                      onClick={!user ? () => navigate("/auth") : handleCheckout}
                       disabled={isLoading}
                     >
-                      {isLoading ? "Processando..." : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
-                      <Sparkles className="ml-2 h-4 w-4" />
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processando...
+                        </>
+                      ) : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
+                      {!isLoading && <Sparkles className="ml-2 h-4 w-4" />}
                     </Button>
                   )}
                 </div>
