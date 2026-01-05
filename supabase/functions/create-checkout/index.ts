@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
@@ -6,100 +7,76 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Helper function to get Cakto access token
-async function getCaktoToken(): Promise<string> {
-  const clientId = Deno.env.get("CAKTO_CLIENT_ID");
-  const clientSecret = Deno.env.get("CAKTO_CLIENT_SECRET");
+// Price ID do plano AprovI.A Mensal
+const STRIPE_PRICE_ID = "price_1Sm2pbKLwUDwjnpN6WDXN08W";
 
-  if (!clientId || !clientSecret) {
-    throw new Error("Cakto credentials not configured");
-  }
-
-  // OAuth client_credentials: muitos servidores exigem Basic Auth (client_id:client_secret)
-  const basicAuth = btoa(`${clientId}:${clientSecret}`);
-
-  const formBody = new URLSearchParams({
-    grant_type: "client_credentials",
-  });
-
-  const response = await fetch("https://api.cakto.com.br/oauth/token/", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Authorization": `Basic ${basicAuth}`,
-      "Accept": "application/json",
-    },
-    body: formBody.toString(),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error("[CREATE-CHECKOUT] Token request failed:", errorText);
-    throw new Error(`Failed to get Cakto token: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.access_token;
-}
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CREATE-CHECKOUT] ${step}${detailsStr}`);
+};
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseClient = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+  );
+
   try {
-    console.log("[CREATE-CHECKOUT] Function started");
+    logStep("Function started");
 
-    const { email, offerId } = await req.json();
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+    logStep("Stripe key verified");
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header provided");
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data } = await supabaseClient.auth.getUser(token);
+    const user = data.user;
+    if (!user?.email) throw new Error("User not authenticated or email not available");
+    logStep("User authenticated", { userId: user.id, email: user.email });
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
-    if (!email) {
-      throw new Error("Email is required");
+    // Check if customer already exists
+    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    let customerId;
+    if (customers.data.length > 0) {
+      customerId = customers.data[0].id;
+      logStep("Found existing customer", { customerId });
+    } else {
+      logStep("No existing customer, will create one during checkout");
     }
 
-    if (!offerId) {
-      throw new Error("Offer ID is required");
-    }
-
-    console.log("[CREATE-CHECKOUT] Email:", email);
-    console.log("[CREATE-CHECKOUT] Offer ID:", offerId);
-
-    // Get Cakto access token
-    const accessToken = await getCaktoToken();
-    console.log("[CREATE-CHECKOUT] Got Cakto access token");
-
-    // Create checkout link via Cakto API
-    const checkoutResponse = await fetch("https://api.cakto.com.br/api/checkout-links/", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        offer: offerId,
-        customer_email: email,
-      }),
+    const origin = req.headers.get("origin") || "https://4e0c0cae-834c-4fc7-a80a-2addfede1f23.lovableproject.com";
+    
+    const session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      customer_email: customerId ? undefined : user.email,
+      line_items: [
+        {
+          price: STRIPE_PRICE_ID,
+          quantity: 1,
+        },
+      ],
+      mode: "subscription",
+      success_url: `${origin}/?checkout=success`,
+      cancel_url: `${origin}/pricing?checkout=cancelled`,
     });
+    logStep("Checkout session created", { sessionId: session.id, url: session.url });
 
-    if (!checkoutResponse.ok) {
-      const errorText = await checkoutResponse.text();
-      console.error("[CREATE-CHECKOUT] Checkout creation failed:", errorText);
-      throw new Error(`Failed to create checkout: ${checkoutResponse.status}`);
-    }
-
-    const checkoutData = await checkoutResponse.json();
-    console.log("[CREATE-CHECKOUT] Checkout created:", checkoutData);
-
-    // Cakto returns the checkout URL directly
-    const checkoutUrl = checkoutData.url || checkoutData.checkout_url || `https://pay.cakto.com.br/${checkoutData.id}`;
-
-    return new Response(JSON.stringify({ url: checkoutUrl }), {
+    return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("[CREATE-CHECKOUT] ERROR:", errorMessage);
-    
+    logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
