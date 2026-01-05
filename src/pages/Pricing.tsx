@@ -299,8 +299,7 @@ const Pricing = () => {
                       {user && (
                         <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
                           <p className="text-xs text-muted-foreground">
-                            ⚠️ Após o pagamento, você será redirecionado para uma página da Cakto. 
-                            <span className="font-medium text-foreground"> Basta entrar novamente no site</span> para acessar seu plano.
+                            Ao efetuar o pagamento, basta entrar no nosso site <span className="font-medium text-foreground">aprovia.site</span> novamente, e depois clicar em <span className="font-medium text-foreground">"Entrar no APP"</span> para conseguir acessar nosso produto.
                           </p>
                         </div>
                       )}
