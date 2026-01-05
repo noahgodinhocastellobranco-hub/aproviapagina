@@ -11,6 +11,54 @@ interface WebhookPayload {
   password?: string;
 }
 
+// Validação de email
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 255;
+}
+
+// Sanitização de string
+function sanitizeString(input: string | undefined, maxLength: number): string {
+  if (!input || typeof input !== 'string') return '';
+  return input.trim().slice(0, maxLength).replace(/[<>]/g, '');
+}
+
+// Validação do payload
+function validatePayload(payload: unknown): { valid: boolean; error?: string; data?: WebhookPayload } {
+  if (!payload || typeof payload !== 'object') {
+    return { valid: false, error: 'Invalid payload format' };
+  }
+
+  const p = payload as Record<string, unknown>;
+
+  // Validar email (obrigatório)
+  if (!p.email || typeof p.email !== 'string') {
+    return { valid: false, error: 'Email is required and must be a string' };
+  }
+
+  const email = p.email.trim().toLowerCase();
+  if (!isValidEmail(email)) {
+    return { valid: false, error: 'Invalid email format' };
+  }
+
+  // Sanitizar nome (opcional)
+  const name = sanitizeString(p.name as string | undefined, 100);
+
+  // Validar senha (opcional, se fornecida)
+  let password: string | undefined;
+  if (p.password && typeof p.password === 'string') {
+    if (p.password.length < 6 || p.password.length > 72) {
+      return { valid: false, error: 'Password must be between 6 and 72 characters' };
+    }
+    password = p.password;
+  }
+
+  return {
+    valid: true,
+    data: { email, name, password }
+  };
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -20,17 +68,39 @@ Deno.serve(async (req) => {
   try {
     console.log('Received webhook request from n8n');
     
-    const payload: WebhookPayload = await req.json();
-    console.log('Payload received:', { email: payload.email, name: payload.name });
-
-    // Validate required fields
-    if (!payload.email) {
-      console.error('Missing email in payload');
+    // Validar Content-Type
+    const contentType = req.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      console.error('Invalid content type:', contentType);
       return new Response(
-        JSON.stringify({ error: 'Email is required' }),
+        JSON.stringify({ error: 'Content-Type must be application/json' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    let rawPayload: unknown;
+    try {
+      rawPayload = await req.json();
+    } catch {
+      console.error('Failed to parse JSON body');
+      return new Response(
+        JSON.stringify({ error: 'Invalid JSON body' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validar e sanitizar payload
+    const validation = validatePayload(rawPayload);
+    if (!validation.valid || !validation.data) {
+      console.error('Validation failed:', validation.error);
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const payload = validation.data;
+    console.log('Payload validated:', { email: payload.email, name: payload.name });
 
     // Create Supabase admin client
     const supabaseAdmin = createClient(
@@ -53,7 +123,7 @@ Deno.serve(async (req) => {
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: payload.email,
       password: userPassword,
-      email_confirm: true, // Auto-confirm email
+      email_confirm: true,
       user_metadata: {
         name: payload.name || '',
         created_via: 'cakto_purchase'
@@ -77,20 +147,19 @@ Deno.serve(async (req) => {
       }
       
       return new Response(
-        JSON.stringify({ error: createError.message }),
+        JSON.stringify({ error: 'Failed to create user' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('User created successfully:', userData.user?.id);
 
-    // Return success with user details
+    // Return success with user details (não retorna a senha por segurança)
     return new Response(
       JSON.stringify({
         success: true,
         user_id: userData.user?.id,
         email: userData.user?.email,
-        password: userPassword, // Return password so it can be sent to the user
         message: 'User created successfully'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -98,9 +167,8 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('Unexpected error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: 'Internal server error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
