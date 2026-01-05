@@ -114,7 +114,7 @@ const Pricing = () => {
     }
   };
 
-  const handleCheckout = async (offerId: string) => {
+  const handleCheckout = async () => {
     if (!user) {
       toast.error("Você precisa estar logado para assinar");
       navigate("/auth");
@@ -126,21 +126,26 @@ const Pricing = () => {
       return;
     }
 
-    if (!email || !email.includes("@")) {
-      toast.error("Por favor, insira um email válido");
-      return;
-    }
-
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        toast.error("Sessão expirada. Por favor, faça login novamente.");
+        navigate("/auth");
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        body: { email, offerId },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (error) throw error;
 
       if (data?.url) {
-        // Redireciona na mesma aba para o checkout da Cakto
+        // Redireciona para o checkout do Stripe
         window.location.href = data.url;
       }
     } catch (error) {
@@ -282,7 +287,7 @@ const Pricing = () => {
                         if (!user) {
                           navigate("/auth");
                         } else {
-                          handleCheckout(plan.offerId);
+                          handleCheckout();
                         }
                       }}
                       disabled={isLoading}
