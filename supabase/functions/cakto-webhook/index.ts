@@ -135,7 +135,9 @@ serve(async (req) => {
     
     const cancelledEvents = [
       "subscription.cancelled", "subscription_cancelled", "subscription.canceled",
-      "cancelled", "canceled", "refunded", "chargeback"
+      "cancelled", "canceled", "refunded", "chargeback",
+      "refund_requested", "refund_approved", "purchase_refunded", "purchase.refunded",
+      "payment.refunded", "refund", "refund.approved", "refund.completed"
     ];
 
     if (approvedEvents.some(e => 
