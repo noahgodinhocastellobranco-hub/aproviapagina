@@ -11,11 +11,28 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CAKTO-WEBHOOK] ${step}${detailsStr}`);
 };
 
+// Validação de email
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 255;
+}
+
+// Sanitização de string
+function sanitizeString(input: unknown, maxLength: number): string {
+  if (!input || typeof input !== 'string') return '';
+  return input.trim().slice(0, maxLength).replace(/[<>]/g, '');
+}
+
 // Função para verificar a assinatura do webhook
 async function verifyWebhookSignature(payload: string, signature: string | null, secret: string): Promise<boolean> {
-  if (!signature || !secret) {
-    logStep("No signature or secret provided, skipping verification");
-    return true; // Se não tiver assinatura configurada, aceita (para testes)
+  if (!signature) {
+    logStep("No signature provided");
+    return false;
+  }
+  
+  if (!secret) {
+    logStep("WARNING: No webhook secret configured - accepting request but this is insecure");
+    return true;
   }
 
   try {
@@ -62,19 +79,17 @@ serve(async (req) => {
     const rawBody = await req.text();
     logStep("Raw body received", { length: rawBody.length });
     
-    // Verificar assinatura se a chave secreta estiver configurada
+    // Verificar assinatura - OBRIGATÓRIO se a chave secreta estiver configurada
     const webhookSecret = Deno.env.get("CAKTO_WEBHOOK_SECRET");
     const signature = req.headers.get("x-cakto-signature") || req.headers.get("x-webhook-signature");
     
-    if (webhookSecret && signature) {
-      const isValid = await verifyWebhookSignature(rawBody, signature, webhookSecret);
-      if (!isValid) {
-        logStep("Invalid webhook signature");
-        return new Response(JSON.stringify({ error: "Invalid signature" }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 401,
-        });
-      }
+    const isValid = await verifyWebhookSignature(rawBody, signature, webhookSecret || "");
+    if (!isValid) {
+      logStep("Invalid or missing webhook signature");
+      return new Response(JSON.stringify({ error: "Invalid signature" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+      });
     }
     
     const payload = JSON.parse(rawBody);
@@ -103,14 +118,24 @@ serve(async (req) => {
       });
     }
 
-    logStep("Customer email found", { email: customerEmail });
+    // Validar formato do email
+    const sanitizedEmail = sanitizeString(customerEmail, 255).toLowerCase();
+    if (!isValidEmail(sanitizedEmail)) {
+      logStep("Invalid email format", { email: sanitizedEmail });
+      return new Response(JSON.stringify({ received: true, warning: "Invalid email format" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    logStep("Customer email validated", { email: sanitizedEmail });
 
     // Find user by email
     const { data: userData, error: userError } = await supabaseClient.auth.admin.listUsers();
     
     let userId: string | null = null;
     if (!userError && userData?.users) {
-      const user = userData.users.find(u => u.email?.toLowerCase() === customerEmail.toLowerCase());
+      const user = userData.users.find(u => u.email?.toLowerCase() === sanitizedEmail);
       if (user) {
         userId = user.id;
         logStep("Found user ID", { userId });
@@ -160,7 +185,7 @@ serve(async (req) => {
     const { data: existingSubscription } = await supabaseClient
       .from("subscriptions")
       .select("id")
-      .eq("user_email", customerEmail.toLowerCase())
+      .eq("user_email", sanitizedEmail)
       .eq("status", "active")
       .maybeSingle();
 
@@ -193,7 +218,7 @@ serve(async (req) => {
         .from("subscriptions")
         .insert({
           user_id: userId || "00000000-0000-0000-0000-000000000000",
-          user_email: customerEmail.toLowerCase(),
+          user_email: sanitizedEmail,
           cakto_subscription_id: subscriptionId,
           cakto_order_id: orderId,
           status: subscriptionStatus,
@@ -217,7 +242,7 @@ serve(async (req) => {
           status: "cancelled",
           cancelled_at: new Date().toISOString(),
         })
-        .eq("user_email", customerEmail.toLowerCase())
+        .eq("user_email", sanitizedEmail)
         .eq("status", "active");
 
       if (cancelError) {
@@ -228,7 +253,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       received: true,
       status: subscriptionStatus,
-      email: customerEmail 
+      email: sanitizedEmail 
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
