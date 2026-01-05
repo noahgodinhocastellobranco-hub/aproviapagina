@@ -296,13 +296,6 @@ const Pricing = () => {
                         {!isLoading && <Sparkles className="ml-2 h-4 w-4" />}
                       </Button>
                       
-                      {user && (
-                        <div className="bg-gradient-to-r from-primary/20 to-accent/20 border-2 border-primary rounded-xl p-4 text-center animate-pulse">
-                          <p className="text-sm font-bold text-primary">
-                            ⚡ Ao efetuar o pagamento, basta entrar no nosso site <span className="text-foreground underline decoration-2">aprovia.site</span> e clicar em <span className="text-foreground">"Entrar no APP"</span> para acessar nosso produto! ⚡
-                          </p>
-                        </div>
-                      )}
                     </>
                   )}
                 </div>
