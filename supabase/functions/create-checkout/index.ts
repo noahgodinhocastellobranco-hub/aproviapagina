@@ -36,9 +36,11 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Construir URL do checkout da Cakto
-    const checkoutUrl = `https://pay.cakto.com.br/${CAKTO_OFFER_ID}?email=${encodeURIComponent(user.email)}`;
-    logStep("Cakto checkout URL generated", { url: checkoutUrl });
+    // Construir URL do checkout da Cakto com redirecionamento
+    const origin = req.headers.get("origin") || "https://enemconquista.lovable.dev";
+    const successUrl = `${origin}/success`;
+    const checkoutUrl = `https://pay.cakto.com.br/${CAKTO_OFFER_ID}?email=${encodeURIComponent(user.email)}&redirect_url=${encodeURIComponent(successUrl)}`;
+    logStep("Cakto checkout URL generated", { url: checkoutUrl, successUrl });
 
     return new Response(JSON.stringify({ url: checkoutUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
