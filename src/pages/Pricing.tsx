@@ -145,7 +145,7 @@ const Pricing = () => {
       if (error) throw error;
 
       if (data?.url) {
-        // Redireciona para o checkout do Stripe
+        // Redireciona para o checkout da Cakto
         window.location.href = data.url;
       }
     } catch (error) {
