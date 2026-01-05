@@ -1,8 +1,58 @@
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Brain, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const Hero = () => {
+  const [user, setUser] = useState<any>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        checkSubscription(session.access_token);
+      }
+    };
+    
+    checkAuth();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => checkSubscription(session.access_token), 0);
+      } else {
+        setHasSubscription(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const checkSubscription = async (token: string) => {
+    try {
+      const { data } = await supabase.functions.invoke("check-subscription", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setHasSubscription(data?.hasSubscription || false);
+    } catch (error) {
+      console.error("Erro ao verificar assinatura:", error);
+    }
+  };
+
+  const handleStartStudying = () => {
+    if (!user) {
+      navigate("/auth");
+    } else if (hasSubscription) {
+      window.open("https://aproviaapp.lovable.app", "_blank");
+    } else {
+      navigate("/pricing");
+    }
+  };
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-b from-background to-secondary/30">
       {/* Decorative elements */}
@@ -35,17 +85,21 @@ const Hero = () => {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all" asChild>
-              <Link to="/pricing">
-                <Sparkles className="mr-2 h-5 w-5" />
-                Começar a Estudar
-              </Link>
+            <Button 
+              size="lg" 
+              className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all" 
+              onClick={handleStartStudying}
+            >
+              <Sparkles className="mr-2 h-5 w-5" />
+              {!user ? "Começar a Estudar" : hasSubscription ? "Entrar no App" : "Assinar para Estudar"}
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 py-6" asChild>
-              <Link to="/auth">
-                Login / Criar Conta
-              </Link>
-            </Button>
+            {!user && (
+              <Button size="lg" variant="outline" className="text-lg px-8 py-6" asChild>
+                <Link to="/auth">
+                  Login / Criar Conta
+                </Link>
+              </Button>
+            )}
           </div>
 
           {/* Social proof */}
