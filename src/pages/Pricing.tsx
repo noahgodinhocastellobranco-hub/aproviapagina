@@ -297,9 +297,9 @@ const Pricing = () => {
                       </Button>
                       
                       {user && (
-                        <div className="bg-primary/10 border border-primary/30 rounded-lg p-4 text-center">
-                          <p className="text-sm text-primary font-medium">
-                            ✨ Ao efetuar o pagamento, basta entrar no nosso site <span className="font-bold underline">aprovia.site</span> novamente, e depois clicar em <span className="font-bold">"Entrar no APP"</span> para conseguir acessar nosso produto.
+                        <div className="bg-gradient-to-r from-primary/20 to-accent/20 border-2 border-primary rounded-xl p-4 text-center animate-pulse">
+                          <p className="text-sm font-bold text-primary">
+                            ⚡ Ao efetuar o pagamento, basta entrar no nosso site <span className="text-foreground underline decoration-2">aprovia.site</span> e clicar em <span className="text-foreground">"Entrar no APP"</span> para acessar nosso produto! ⚡
                           </p>
                         </div>
                       )}
