@@ -127,31 +127,33 @@ serve(async (req) => {
     // Determine subscription status based on event type
     let subscriptionStatus = "pending";
     
-    const approvedEvents = [
-      "purchase_approved", "purchase.approved", "payment.approved",
-      "subscription.active", "subscription_activated", "order.paid",
-      "approved", "paid", "completed", "complete", "ativa", "active"
-    ];
-    
+    // Check cancelled/refunded events FIRST (higher priority)
     const cancelledEvents = [
       "subscription.cancelled", "subscription_cancelled", "subscription.canceled",
       "cancelled", "canceled", "refunded", "chargeback",
       "refund_requested", "refund_approved", "purchase_refunded", "purchase.refunded",
       "payment.refunded", "refund", "refund.approved", "refund.completed"
     ];
+    
+    const approvedEvents = [
+      "purchase_approved", "purchase.approved", "payment.approved",
+      "subscription.active", "subscription_activated", "order.paid",
+      "approved", "paid", "completed", "complete", "ativa", "active"
+    ];
 
-    if (approvedEvents.some(e => 
+    // Check for refund/cancel events FIRST
+    if (cancelledEvents.some(e => 
+      eventType?.toLowerCase()?.includes(e) || 
+      status?.toLowerCase() === e
+    )) {
+      subscriptionStatus = "cancelled";
+      logStep("Subscription cancelled/refunded");
+    } else if (approvedEvents.some(e => 
       eventType?.toLowerCase()?.includes(e) || 
       status?.toLowerCase() === e
     )) {
       subscriptionStatus = "active";
       logStep("Payment approved - activating subscription");
-    } else if (cancelledEvents.some(e => 
-      eventType?.toLowerCase()?.includes(e) || 
-      status?.toLowerCase() === e
-    )) {
-      subscriptionStatus = "cancelled";
-      logStep("Subscription cancelled");
     }
 
     // Check if subscription already exists
