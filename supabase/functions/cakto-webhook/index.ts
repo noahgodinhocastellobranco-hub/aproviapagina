@@ -3,8 +3,47 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cakto-signature",
 };
+
+const logStep = (step: string, details?: any) => {
+  const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+  console.log(`[CAKTO-WEBHOOK] ${step}${detailsStr}`);
+};
+
+// Função para verificar a assinatura do webhook
+async function verifyWebhookSignature(payload: string, signature: string | null, secret: string): Promise<boolean> {
+  if (!signature || !secret) {
+    logStep("No signature or secret provided, skipping verification");
+    return true; // Se não tiver assinatura configurada, aceita (para testes)
+  }
+
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(secret),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+    const expectedSignature = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    // Comparar assinaturas (pode vir com prefixo sha256=)
+    const cleanSignature = signature.replace("sha256=", "");
+    const isValid = cleanSignature === expectedSignature;
+    
+    logStep("Signature verification", { isValid });
+    return isValid;
+  } catch (error) {
+    logStep("Signature verification error", { error: String(error) });
+    return false;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,16 +57,34 @@ serve(async (req) => {
   );
 
   try {
-    console.log("[CAKTO-WEBHOOK] Received webhook");
+    logStep("Received webhook");
     
-    const payload = await req.json();
-    console.log("[CAKTO-WEBHOOK] Payload:", JSON.stringify(payload));
+    const rawBody = await req.text();
+    logStep("Raw body received", { length: rawBody.length });
+    
+    // Verificar assinatura se a chave secreta estiver configurada
+    const webhookSecret = Deno.env.get("CAKTO_WEBHOOK_SECRET");
+    const signature = req.headers.get("x-cakto-signature") || req.headers.get("x-webhook-signature");
+    
+    if (webhookSecret && signature) {
+      const isValid = await verifyWebhookSignature(rawBody, signature, webhookSecret);
+      if (!isValid) {
+        logStep("Invalid webhook signature");
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401,
+        });
+      }
+    }
+    
+    const payload = JSON.parse(rawBody);
+    logStep("Payload parsed", { event: payload.event || payload.type });
 
     // Cakto sends different event types
     const eventType = payload.event || payload.type || payload.action;
     const data = payload.data || payload;
     
-    console.log("[CAKTO-WEBHOOK] Event type:", eventType);
+    logStep("Event type", { eventType });
 
     // Extract customer email from various possible locations in the payload
     const customerEmail = 
@@ -39,14 +96,14 @@ serve(async (req) => {
       payload.buyer?.email;
 
     if (!customerEmail) {
-      console.log("[CAKTO-WEBHOOK] No customer email found in payload");
+      logStep("No customer email found in payload");
       return new Response(JSON.stringify({ received: true, warning: "No customer email" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    console.log("[CAKTO-WEBHOOK] Customer email:", customerEmail);
+    logStep("Customer email found", { email: customerEmail });
 
     // Find user by email
     const { data: userData, error: userError } = await supabaseClient.auth.admin.listUsers();
@@ -56,7 +113,7 @@ serve(async (req) => {
       const user = userData.users.find(u => u.email?.toLowerCase() === customerEmail.toLowerCase());
       if (user) {
         userId = user.id;
-        console.log("[CAKTO-WEBHOOK] Found user ID:", userId);
+        logStep("Found user ID", { userId });
       }
     }
 
@@ -86,13 +143,13 @@ serve(async (req) => {
       status?.toLowerCase() === e
     )) {
       subscriptionStatus = "active";
-      console.log("[CAKTO-WEBHOOK] Payment approved - activating subscription");
+      logStep("Payment approved - activating subscription");
     } else if (cancelledEvents.some(e => 
       eventType?.toLowerCase()?.includes(e) || 
       status?.toLowerCase() === e
     )) {
       subscriptionStatus = "cancelled";
-      console.log("[CAKTO-WEBHOOK] Subscription cancelled");
+      logStep("Subscription cancelled");
     }
 
     // Check if subscription already exists
@@ -105,7 +162,7 @@ serve(async (req) => {
 
     if (existingSubscription && subscriptionStatus === "active") {
       // Update existing subscription
-      console.log("[CAKTO-WEBHOOK] Updating existing subscription");
+      logStep("Updating existing subscription");
       const { error: updateError } = await supabaseClient
         .from("subscriptions")
         .update({
@@ -117,11 +174,11 @@ serve(async (req) => {
         .eq("id", existingSubscription.id);
 
       if (updateError) {
-        console.error("[CAKTO-WEBHOOK] Error updating subscription:", updateError);
+        logStep("Error updating subscription", { error: updateError.message });
       }
     } else if (subscriptionStatus === "active") {
       // Create new subscription
-      console.log("[CAKTO-WEBHOOK] Creating new subscription");
+      logStep("Creating new subscription");
       
       // Calculate expiration (30 days for monthly)
       const startedAt = new Date();
@@ -143,13 +200,13 @@ serve(async (req) => {
         });
 
       if (insertError) {
-        console.error("[CAKTO-WEBHOOK] Error creating subscription:", insertError);
+        logStep("Error creating subscription", { error: insertError.message });
       } else {
-        console.log("[CAKTO-WEBHOOK] Subscription created successfully");
+        logStep("Subscription created successfully");
       }
     } else if (subscriptionStatus === "cancelled") {
       // Cancel subscription
-      console.log("[CAKTO-WEBHOOK] Cancelling subscription");
+      logStep("Cancelling subscription");
       const { error: cancelError } = await supabaseClient
         .from("subscriptions")
         .update({
@@ -160,7 +217,7 @@ serve(async (req) => {
         .eq("status", "active");
 
       if (cancelError) {
-        console.error("[CAKTO-WEBHOOK] Error cancelling subscription:", cancelError);
+        logStep("Error cancelling subscription", { error: cancelError.message });
       }
     }
 
@@ -175,7 +232,7 @@ serve(async (req) => {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error("[CAKTO-WEBHOOK] ERROR:", errorMessage);
+    logStep("ERROR", { error: errorMessage });
     
     // Always return 200 to avoid webhook retries
     return new Response(JSON.stringify({ 
