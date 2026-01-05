@@ -15,17 +15,19 @@ async function getCaktoToken(): Promise<string> {
     throw new Error("Cakto credentials not configured");
   }
 
-  // Tentar primeiro com form-urlencoded (mais comum para OAuth)
+  // OAuth client_credentials: muitos servidores exigem Basic Auth (client_id:client_secret)
+  const basicAuth = btoa(`${clientId}:${clientSecret}`);
+
   const formBody = new URLSearchParams({
     grant_type: "client_credentials",
-    client_id: clientId,
-    client_secret: clientSecret,
   });
 
   const response = await fetch("https://api.cakto.com.br/oauth/token/", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
+      "Authorization": `Basic ${basicAuth}`,
+      "Accept": "application/json",
     },
     body: formBody.toString(),
   });
