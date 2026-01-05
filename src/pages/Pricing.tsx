@@ -280,20 +280,31 @@ const Pricing = () => {
                       </div>
                     </div>
                   ) : (
-                    <Button 
-                      size="lg" 
-                      className="w-full"
-                      onClick={!user ? () => navigate("/auth") : handleCheckout}
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processando...
-                        </>
-                      ) : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
-                      {!isLoading && <Sparkles className="ml-2 h-4 w-4" />}
-                    </Button>
+                    <>
+                      <Button 
+                        size="lg" 
+                        className="w-full"
+                        onClick={!user ? () => navigate("/auth") : handleCheckout}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processando...
+                          </>
+                        ) : !user ? "Fazer Login para Comprar" : "Comprar Agora"}
+                        {!isLoading && <Sparkles className="ml-2 h-4 w-4" />}
+                      </Button>
+                      
+                      {user && (
+                        <div className="bg-muted/50 border border-border rounded-lg p-3 text-center">
+                          <p className="text-xs text-muted-foreground">
+                            ⚠️ Após o pagamento, você será redirecionado para uma página da Cakto. 
+                            <span className="font-medium text-foreground"> Basta entrar novamente no site</span> para acessar seu plano.
+                          </p>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
