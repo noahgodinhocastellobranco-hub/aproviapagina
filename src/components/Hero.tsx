@@ -142,22 +142,22 @@ const Hero = () => {
             <Button 
               size="lg" 
               className="text-lg md:text-xl px-10 md:px-14 py-7 md:py-8 shadow-2xl hover:shadow-primary/30 hover:scale-105 transition-all bg-gradient-to-r from-primary via-primary to-primary/90 relative group font-bold" 
-              onClick={handleStartStudying}
+              asChild
             >
-              <span className="absolute -top-4 -right-2 bg-accent text-accent-foreground text-xs font-black px-3 py-1.5 rounded-full animate-bounce shadow-lg">
-                🔥 -40% HOJE
-              </span>
-              <Sparkles className="mr-2 h-6 w-6 group-hover:animate-spin" />
-              {!user ? "QUERO PASSAR NO ENEM" : hasSubscription ? "ENTRAR NO APP" : "COMEÇAR AGORA"}
-              <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              <Link to="/pricing">
+                <span className="absolute -top-4 -right-2 bg-accent text-accent-foreground text-xs font-black px-3 py-1.5 rounded-full animate-bounce shadow-lg">
+                  🔥 -40% HOJE
+                </span>
+                <Sparkles className="mr-2 h-6 w-6 group-hover:animate-spin" />
+                QUERO PASSAR NO ENEM
+                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
-            {!user && (
-              <Button size="lg" variant="outline" className="text-lg px-8 py-7 border-2 hover:bg-primary/5" asChild>
-                <Link to="/auth">
-                  Já tenho conta
-                </Link>
-              </Button>
-            )}
+            <Button size="lg" variant="outline" className="text-lg px-8 py-7 border-2 hover:bg-primary/5" asChild>
+              <Link to="/auth">
+                Já tenho conta
+              </Link>
+            </Button>
           </div>
 
           {/* Trust Signals - Enhanced */}
