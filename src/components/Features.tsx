@@ -1,69 +1,73 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { PenTool, MessageSquare, FileText, BookOpen, Lightbulb, Sparkles } from "lucide-react";
+import { PenTool, MessageSquare, FileText, BookOpen, Brain, Target, Clock, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const features = [
   {
     icon: PenTool,
-    title: "Correção de Redação",
-    description: "Receba nota e feedback detalhado baseado nos 5 critérios do ENEM",
-    cta: "Praticar Agora",
-    gradient: "from-blue-500/10 to-blue-600/10",
-    iconColor: "text-blue-600"
+    title: "Correção de Redação em 30s",
+    description: "Envie sua redação e receba nota + feedback detalhado nos 5 critérios do ENEM. Como ter um professor particular 24/7.",
+    highlight: "Mais de 73.000 redações corrigidas",
+    gradient: "from-primary/20 to-primary/5",
+    iconColor: "text-primary"
   },
   {
     icon: MessageSquare,
-    title: "Chat Inteligente",
-    description: "Tire dúvidas sobre qualquer matéria com nossa IA especializada em ENEM",
-    cta: "Conversar Agora",
-    gradient: "from-purple-500/10 to-purple-600/10",
-    iconColor: "text-purple-600"
+    title: "Tire Dúvidas Instantaneamente",
+    description: "Não entendeu a questão? Pergunte à IA. Ela explica passo a passo de um jeito que você realmente entende.",
+    highlight: "Respostas em menos de 5 segundos",
+    gradient: "from-accent/20 to-accent/5",
+    iconColor: "text-accent"
+  },
+  {
+    icon: Target,
+    title: "Plano de Estudos Personalizado",
+    description: "A IA analisa seus pontos fracos e cria um cronograma sob medida. Estude o que realmente importa.",
+    highlight: "Adaptado ao SEU nível",
+    gradient: "from-primary/20 to-primary/5",
+    iconColor: "text-primary"
   },
   {
     icon: FileText,
-    title: "Simulados Oficiais",
-    description: "Acesse provas anteriores do ENEM e simulados de cursos renomados",
-    cta: "Ver Simulados",
-    gradient: "from-cyan-500/10 to-cyan-600/10",
-    iconColor: "text-cyan-600"
+    title: "Simulados com Análise Completa",
+    description: "Faça provas anteriores do ENEM e simulados. Veja exatamente onde você está errando e como melhorar.",
+    highlight: "Todas as provas de 2009 a 2024",
+    gradient: "from-accent/20 to-accent/5",
+    iconColor: "text-accent"
   },
   {
-    icon: BookOpen,
-    title: "Matérias do ENEM",
-    description: "Estude os conteúdos que mais caem organizados por área de conhecimento",
-    cta: "Explorar Matérias",
-    gradient: "from-green-500/10 to-green-600/10",
-    iconColor: "text-green-600"
+    icon: Brain,
+    title: "IA Treinada para o ENEM",
+    description: "Diferente do ChatGPT, nossa IA foi treinada especificamente para o ENEM brasileiro. Ela conhece os truques da prova.",
+    highlight: "Tecnologia exclusiva",
+    gradient: "from-primary/20 to-primary/5",
+    iconColor: "text-primary"
   },
   {
-    icon: Lightbulb,
-    title: "Dicas Estratégicas",
-    description: "Aprenda técnicas e estratégias para maximizar sua nota no ENEM",
-    cta: "Ver Dicas",
-    gradient: "from-yellow-500/10 to-yellow-600/10",
-    iconColor: "text-yellow-600"
-  },
-  {
-    icon: Sparkles,
-    title: "Powered by IA",
-    description: "Tecnologia de ponta para acelerar seus estudos e melhorar resultados",
-    cta: "Saiba Mais",
-    gradient: "from-pink-500/10 to-pink-600/10",
-    iconColor: "text-pink-600"
+    icon: TrendingUp,
+    title: "Acompanhe Sua Evolução",
+    description: "Veja seus pontos subindo semana a semana. Gráficos e métricas que mostram seu progresso real.",
+    highlight: "+200 pontos em média",
+    gradient: "from-accent/20 to-accent/5",
+    iconColor: "text-accent"
   }
 ];
 
 const Features = () => {
   return (
-    <section className="py-20 md:py-32 bg-gradient-to-b from-background to-muted/30">
+    <section className="py-20 md:py-28 bg-gradient-to-b from-muted/30 to-background relative">
       <div className="container px-4">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-14">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold mb-4">
+            FUNCIONALIDADES
+          </span>
           <h2 className="text-3xl md:text-5xl font-bold mb-4">
-            Tudo que você precisa para <span className="text-primary">conquistar sua aprovação</span>
+            Tudo que você precisa para
+            <span className="text-primary block mt-1">GARANTIR sua aprovação</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Uma plataforma completa de estudos com inteligência artificial
+            Pare de perder tempo com métodos que não funcionam. A AprovI.A tem tudo integrado.
           </p>
         </div>
 
@@ -73,27 +77,35 @@ const Features = () => {
             return (
               <Card 
                 key={index} 
-                className="border-2 hover:border-primary/50 transition-all hover:shadow-lg group"
+                className="border-2 hover:border-primary/50 transition-all hover:shadow-xl group relative overflow-hidden"
               >
-                <CardHeader>
-                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                <CardHeader className="relative">
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg`}>
                     <Icon className={`h-7 w-7 ${feature.iconColor}`} />
                   </div>
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
-                  <CardDescription className="text-base">
+                  <CardDescription className="text-base leading-relaxed">
                     {feature.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <Button variant="ghost" className="w-full group-hover:bg-primary/5" asChild>
-                    <Link to="/pricing">
-                      {feature.cta} →
-                    </Link>
-                  </Button>
+                <CardContent className="relative">
+                  <div className="flex items-center gap-2 text-sm font-medium text-accent">
+                    <Clock className="w-4 h-4" />
+                    {feature.highlight}
+                  </div>
                 </CardContent>
               </Card>
             );
           })}
+        </div>
+
+        <div className="text-center mt-12">
+          <Button size="lg" className="text-lg px-10 py-7 shadow-xl hover:shadow-2xl transition-all" asChild>
+            <Link to="/pricing">
+              Quero Todas Essas Funcionalidades →
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
