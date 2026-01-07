@@ -9,6 +9,16 @@ const Success = () => {
   const [showContent, setShowContent] = useState(false);
 
   useEffect(() => {
+    // Disparar evento de conversão do Google Ads
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('event', 'conversion', {
+        'send_to': 'AW-17852831911/PURCHASE',
+        'value': 1.0,
+        'currency': 'BRL'
+      });
+      console.log('✅ Conversão do Google Ads disparada');
+    }
+
     // Disparar confetes
     const duration = 3000;
     const end = Date.now() + duration;
