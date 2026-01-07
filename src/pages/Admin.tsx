@@ -43,7 +43,8 @@ import {
   Activity,
   PieChart,
   ChevronRight,
-  AlertTriangle
+  AlertTriangle,
+  Download
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
@@ -285,6 +286,34 @@ const Admin = () => {
     }
   };
 
+  const handleExportEmails = () => {
+    if (!dashboardData) return;
+    
+    // Filtrar apenas assinantes ativos
+    const activeSubscribers = dashboardData.users.filter(u => u.subscription !== null);
+    
+    // Criar CSV com emails
+    const headers = "Email,Data Cadastro,Status Assinatura\n";
+    const rows = activeSubscribers.map(u => 
+      `${u.email},${formatShortDate(u.created_at)},${u.subscription?.status || 'N/A'}`
+    ).join("\n");
+    
+    const csv = headers + rows;
+    
+    // Download do arquivo
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `emails-assinantes-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`${activeSubscribers.length} emails exportados para Google Ads!`);
+  };
+
   const formatShortDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -430,7 +459,16 @@ const Admin = () => {
                 <p className="text-sm text-muted-foreground">Gestão completa da plataforma</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={handleExportEmails}
+                className="gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Download className="w-4 h-4" />
+                Exportar Emails
+              </Button>
               <Button 
                 variant="outline" 
                 size="sm" 
