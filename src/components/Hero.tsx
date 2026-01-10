@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, CheckCircle2, Star, Zap, TrendingUp, Clock, Shield, ArrowRight, Play, AlertTriangle } from "lucide-react";
+import { Brain, Sparkles, CheckCircle2, Star, Zap, Shield, ArrowRight, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -69,7 +69,7 @@ const Hero = () => {
           {/* URGENCY BANNER - High impact */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-destructive/20 to-destructive/10 border-2 border-destructive/30 text-destructive shadow-lg">
             <AlertTriangle className="w-5 h-5 animate-pulse" />
-            <span className="text-sm md:text-base font-bold">⚡ ENEM 2025: Restam poucos meses! Últimas vagas com desconto</span>
+            <span className="text-sm md:text-base font-bold">⚡ ENEM 2025 está chegando — Comece a estudar agora</span>
           </div>
 
           {/* Logo with enhanced styling */}
@@ -86,50 +86,30 @@ const Hero = () => {
 
           {/* Main Headline - Stronger emotional trigger */}
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-black leading-tight text-foreground tracking-tight">
-            <span className="inline-block">Você está</span>{" "}
+            <span className="inline-block">Sua</span>{" "}
             <span className="relative inline-block">
-              <span className="text-destructive">perdendo tempo</span>
-              <svg className="absolute -bottom-2 left-0 w-full h-3 text-destructive/30" viewBox="0 0 200 12">
-                <path d="M0,8 Q50,0 100,8 T200,8" fill="none" stroke="currentColor" strokeWidth="4"/>
-              </svg>
+              <span className="text-primary">Inteligência Artificial</span>
             </span>
-            <span className="block mt-2 text-primary">
-              estudando do jeito errado
+            <span className="block mt-2">
+              para <span className="text-accent">passar no ENEM</span>
             </span>
           </h2>
 
           {/* Subheadline - Clear value prop */}
           <p className="text-lg md:text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            A <strong className="text-foreground font-bold">única IA do Brasil treinada para o ENEM</strong> que corrige redações em 30 segundos, 
-            cria seu plano de estudos personalizado e te leva à <span className="text-accent font-semibold">aprovação garantida</span>.
+            <strong className="text-foreground font-bold">Correção de redação em segundos</strong>, chat para tirar dúvidas 24/7 
+            e plano de estudos personalizado — tudo com inteligência artificial.
           </p>
 
-          {/* Video teaser / demo preview */}
-          <div className="relative max-w-md mx-auto py-4">
-            <div className="relative rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl bg-gradient-to-br from-card to-primary/5 p-1">
-              <div className="bg-card rounded-xl p-6 text-center">
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <div className="w-3 h-3 bg-accent rounded-full animate-pulse" />
-                  <span className="text-xs font-semibold text-accent uppercase tracking-wide">AO VIVO</span>
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">+2.847 estudantes online agora</p>
-                <div className="inline-flex items-center gap-2 text-primary font-semibold">
-                  <Play className="w-5 h-5" />
-                  <span>Veja como funciona</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Key Benefits Pills - More impactful */}
-          <div className="flex flex-wrap justify-center gap-3 py-2">
+          <div className="flex flex-wrap justify-center gap-3 py-4">
             <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-accent/20 to-accent/10 border border-accent/30 shadow-sm hover:shadow-md transition-shadow">
               <Zap className="w-5 h-5 text-accent" />
-              <span className="text-sm font-bold">Correção em 30 segundos</span>
+              <span className="text-sm font-bold">Correção instantânea de redação</span>
             </div>
             <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 shadow-sm hover:shadow-md transition-shadow">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <span className="text-sm font-bold">+200 pontos em média</span>
+              <Brain className="w-5 h-5 text-primary" />
+              <span className="text-sm font-bold">Chat com IA especializada</span>
             </div>
             <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-accent/20 to-accent/10 border border-accent/30 shadow-sm hover:shadow-md transition-shadow">
               <Shield className="w-5 h-5 text-accent" />
@@ -145,11 +125,8 @@ const Hero = () => {
               asChild
             >
               <Link to="/pricing">
-                <span className="absolute -top-4 -right-2 bg-accent text-accent-foreground text-xs font-black px-3 py-1.5 rounded-full animate-bounce shadow-lg">
-                  🔥 -40% HOJE
-                </span>
                 <Sparkles className="mr-2 h-6 w-6 group-hover:animate-spin" />
-                QUERO PASSAR NO ENEM
+                COMEÇAR AGORA
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
@@ -162,14 +139,6 @@ const Hero = () => {
 
           {/* Trust Signals - Enhanced */}
           <div className="pt-6 space-y-4">
-            <div className="flex items-center justify-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} className="w-6 h-6 fill-yellow-400 text-yellow-400 drop-shadow-sm" />
-              ))}
-              <span className="ml-3 text-base font-bold">4.9/5</span>
-              <span className="text-sm text-muted-foreground">(2.847 avaliações verificadas)</span>
-            </div>
-            
             <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
               <span className="flex items-center gap-2 font-medium">
                 <CheckCircle2 className="w-5 h-5 text-accent" />
@@ -181,24 +150,27 @@ const Hero = () => {
               </span>
               <span className="flex items-center gap-2 font-medium">
                 <CheckCircle2 className="w-5 h-5 text-accent" />
-                Suporte humanizado 24/7
+                Suporte humanizado
               </span>
             </div>
           </div>
 
-          {/* Social Proof Stats - More prominent */}
-          <div className="pt-8 grid grid-cols-3 gap-4 md:gap-6 max-w-2xl mx-auto">
-            <div className="text-center p-4 md:p-6 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="text-3xl md:text-4xl font-black text-primary">12.547</div>
-              <div className="text-xs md:text-sm text-muted-foreground font-medium">estudantes ativos</div>
+          {/* Features Preview */}
+          <div className="pt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto">
+            <div className="text-center p-4 md:p-6 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-lg">
+              <Zap className="w-8 h-8 text-primary mx-auto mb-2" />
+              <div className="text-sm md:text-base font-bold text-foreground">Redação Corrigida</div>
+              <div className="text-xs text-muted-foreground">Em segundos com feedback</div>
             </div>
-            <div className="text-center p-4 md:p-6 rounded-2xl bg-gradient-to-br from-card to-accent/5 border-2 border-accent/10 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="text-3xl md:text-4xl font-black text-accent">94%</div>
-              <div className="text-xs md:text-sm text-muted-foreground font-medium">taxa de aprovação</div>
+            <div className="text-center p-4 md:p-6 rounded-2xl bg-gradient-to-br from-card to-accent/5 border-2 border-accent/10 shadow-lg">
+              <Brain className="w-8 h-8 text-accent mx-auto mb-2" />
+              <div className="text-sm md:text-base font-bold text-foreground">Tire Dúvidas 24/7</div>
+              <div className="text-xs text-muted-foreground">IA treinada para o ENEM</div>
             </div>
-            <div className="text-center p-4 md:p-6 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-lg hover:shadow-xl transition-shadow">
-              <div className="text-3xl md:text-4xl font-black text-primary">73k+</div>
-              <div className="text-xs md:text-sm text-muted-foreground font-medium">redações corrigidas</div>
+            <div className="text-center p-4 md:p-6 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-lg">
+              <Star className="w-8 h-8 text-primary mx-auto mb-2" />
+              <div className="text-sm md:text-base font-bold text-foreground">Plano Personalizado</div>
+              <div className="text-xs text-muted-foreground">Baseado nas suas dificuldades</div>
             </div>
           </div>
 
