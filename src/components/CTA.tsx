@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Brain, ArrowRight, Shield, Clock, Zap, CheckCircle2, Sparkles, AlertTriangle, Users, Star } from "lucide-react";
+import { ArrowRight, Shield, Zap, CheckCircle2, Sparkles, AlertTriangle, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const CTA = () => {
@@ -20,64 +20,34 @@ const CTA = () => {
           {/* Urgency Banner */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg">
             <AlertTriangle className="w-5 h-5 animate-pulse" />
-            <span className="text-sm md:text-base font-bold">⏰ ENEM 2025 está chegando — Não deixe para depois!</span>
+            <span className="text-sm md:text-base font-bold">⏰ ENEM 2025 está chegando — Comece sua preparação!</span>
           </div>
           
           {/* Main Headline */}
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-black leading-tight">
-            Você vai <span className="underline decoration-accent decoration-4 underline-offset-4">escolher</span> qual futuro?
+            Sua <span className="underline decoration-accent decoration-4 underline-offset-4">aprovação</span> começa aqui
           </h2>
           
-          {/* Two Options Comparison */}
-          <div className="grid md:grid-cols-2 gap-6 text-left max-w-3xl mx-auto py-6">
-            {/* Option 1 - Bad choice */}
-            <div className="p-6 md:p-8 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-colors">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold">1</span>
-                <h3 className="font-bold text-lg">Fechar essa página</h3>
-              </div>
-              <p className="text-white/80 text-sm leading-relaxed mb-4">
-                Continuar estudando sozinho, sem direção, rezando para "dar certo" no dia da prova...
-              </p>
-              <div className="text-xs text-white/60 italic">
-                (A maioria faz isso e se arrepende)
-              </div>
-            </div>
-            
-            {/* Option 2 - Good choice */}
-            <div className="p-6 md:p-8 rounded-2xl bg-accent/30 backdrop-blur-sm border-2 border-accent shadow-xl relative">
-              <div className="absolute -top-3 right-4 bg-accent text-accent-foreground text-xs font-bold px-3 py-1 rounded-full">
-                ESCOLHA CERTA ✓
-              </div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="w-10 h-10 rounded-full bg-accent flex items-center justify-center text-lg font-bold text-accent-foreground">2</span>
-                <h3 className="font-bold text-lg">Começar AGORA</h3>
-              </div>
-              <p className="text-white text-sm leading-relaxed mb-4">
-                Ter a <strong>melhor IA do Brasil</strong> te guiando até a aprovação com plano personalizado e correções instantâneas.
-              </p>
-              <div className="flex items-center gap-2 text-xs text-accent font-semibold">
-                <Sparkles className="w-4 h-4" />
-                12.547 já escolheram esse caminho
-              </div>
-            </div>
-          </div>
+          {/* Value Proposition */}
+          <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
+            Correção de redação instantânea, chat com IA para tirar dúvidas e plano de estudos personalizado. 
+            Tudo o que você precisa para se preparar de verdade.
+          </p>
 
-          {/* Social Proof Mini */}
-          <div className="flex items-center justify-center gap-2 py-2">
-            <div className="flex -space-x-2">
-              {['MS', 'LR', 'BM', 'JC', 'AP'].map((initials, i) => (
-                <div 
-                  key={i}
-                  className="w-8 h-8 rounded-full bg-white/20 border-2 border-white flex items-center justify-center text-xs font-bold"
-                >
-                  {initials}
-                </div>
-              ))}
+          {/* Features Mini */}
+          <div className="flex flex-wrap justify-center gap-4 py-4">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
+              <Zap className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium">Correção em segundos</span>
             </div>
-            <span className="text-sm text-white/90 ml-2">
-              <strong>+47 pessoas</strong> se inscreveram hoje
-            </span>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
+              <Brain className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium">IA especializada no ENEM</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm">
+              <CheckCircle2 className="w-4 h-4 text-accent" />
+              <span className="text-sm font-medium">Disponível 24/7</span>
+            </div>
           </div>
 
           {/* Main CTA Button */}
@@ -89,13 +59,13 @@ const CTA = () => {
               asChild
             >
               <Link to="/pricing">
-                <Zap className="mr-2 h-6 w-6 group-hover:animate-pulse" />
-                QUERO GARANTIR MINHA APROVAÇÃO
+                <Sparkles className="mr-2 h-6 w-6 group-hover:animate-pulse" />
+                COMEÇAR AGORA
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
             <p className="text-white/70 text-sm mt-4">
-              Clique e veja os planos. Sem compromisso.
+              Veja os planos e escolha o melhor para você
             </p>
           </div>
 
@@ -110,25 +80,11 @@ const CTA = () => {
                 <CheckCircle2 className="w-5 h-5 text-accent" />
                 Cancele a qualquer momento
               </span>
-              <span className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-accent" />
-                Suporte humanizado
-              </span>
-            </div>
-            
-            {/* Rating */}
-            <div className="flex items-center justify-center gap-2">
-              <div className="flex">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                ))}
-              </div>
-              <span className="text-white/80 text-sm">4.9/5 (2.847 avaliações)</span>
             </div>
             
             <p className="text-white/60 text-xs max-w-lg mx-auto">
-              Se em 7 dias você não amar a AprovI.A, devolvemos 100% do seu dinheiro. 
-              Sem perguntas, sem burocracia, sem enrolação.
+              Se em 7 dias você não gostar, devolvemos 100% do seu dinheiro. 
+              Sem perguntas, sem burocracia.
             </p>
           </div>
         </div>
