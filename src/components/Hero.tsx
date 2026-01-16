@@ -68,7 +68,7 @@ const Hero = () => {
           
           {/* FREE PROMO BANNER */}
           <a 
-            href="https://instagram.com/aprovi.a" 
+            href="https://www.instagram.com/aprovi.a" 
             target="_blank" 
             rel="noopener noreferrer"
             className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-accent/30 to-primary/20 border-2 border-accent/50 shadow-xl animate-pulse hover:scale-105 transition-transform cursor-pointer"
