@@ -68,12 +68,8 @@ const Hero = () => {
           
           {/* FREE PROMO BANNER */}
           <div className="inline-flex flex-col sm:flex-row items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-accent/30 to-primary/20 border-2 border-accent/50 shadow-xl animate-pulse">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-6 h-6 text-accent" />
-              <span className="text-lg md:text-xl font-black text-accent">🎁 GRÁTIS!</span>
-            </div>
-            <span className="text-sm md:text-base font-semibold text-foreground text-center">
-              Mande uma mensagem para nós e ganhe acesso gratuito!
+            <span className="text-sm md:text-base font-bold text-foreground text-center">
+              🎁 <span className="text-accent font-black">GRÁTIS!</span> Mande uma mensagem para nós no Instagram para ter seu acesso gratuito!
             </span>
           </div>
 
