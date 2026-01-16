@@ -66,6 +66,17 @@ const Hero = () => {
       <div className="container px-4 py-8 md:py-16">
         <div className="max-w-5xl mx-auto text-center space-y-5">
           
+          {/* FREE PROMO BANNER */}
+          <div className="inline-flex flex-col sm:flex-row items-center gap-2 px-6 py-3 rounded-2xl bg-gradient-to-r from-accent/30 to-primary/20 border-2 border-accent/50 shadow-xl animate-pulse">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-6 h-6 text-accent" />
+              <span className="text-lg md:text-xl font-black text-accent">🎁 GRÁTIS!</span>
+            </div>
+            <span className="text-sm md:text-base font-semibold text-foreground text-center">
+              Mande uma mensagem para nós e ganhe acesso gratuito!
+            </span>
+          </div>
+
           {/* URGENCY BANNER - High impact */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-destructive/20 to-destructive/10 border-2 border-destructive/30 text-destructive shadow-lg">
             <AlertTriangle className="w-5 h-5 animate-pulse" />
