@@ -220,7 +220,7 @@ const Header = () => {
                 PRO
               </span>
               <Rocket className="w-4 h-4" />
-              <span className="hidden sm:inline">Entrar no App</span>
+              <span className="hidden sm:inline">Comece a Estudar</span>
             </Link>
           </Button>
         ) : (

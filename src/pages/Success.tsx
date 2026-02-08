@@ -121,7 +121,7 @@ const Success = () => {
               <Button size="lg" className="w-full gap-2 shadow-lg" asChild>
                 <Link to="/app">
                   <Rocket className="w-5 h-5" />
-                  Entrar no Aplicativo
+                  Comece a Estudar
                 </Link>
               </Button>
 

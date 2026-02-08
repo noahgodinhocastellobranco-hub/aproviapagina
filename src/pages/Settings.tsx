@@ -641,7 +641,7 @@ const Settings = () => {
             <Button asChild className="w-full">
               <Link to="/app">
                 <Rocket className="w-4 h-4 mr-2" />
-                Entrar no Aplicativo
+                Comece a Estudar
               </Link>
             </Button>
           </CardContent>
