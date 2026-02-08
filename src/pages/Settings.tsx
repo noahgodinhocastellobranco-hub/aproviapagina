@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, LogOut, User, CreditCard, Bell, Shield, Loader2, AlertCircle, Settings as SettingsIcon, Key, Eye, EyeOff, Mail, Rocket } from "lucide-react";
+import { ArrowLeft, LogOut, User, CreditCard, Bell, Shield, Loader2, AlertCircle, Settings as SettingsIcon, Key, Eye, EyeOff, Mail, Rocket, Camera, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,8 @@ const Settings = () => {
   const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState("");
   const [showCurrentPasswordForEmail, setShowCurrentPasswordForEmail] = useState(false);
   const [isChangingEmail, setIsChangingEmail] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -78,6 +80,7 @@ const Settings = () => {
           return;
         }
         setUser(session.user);
+        setAvatarUrl(session.user.user_metadata?.avatar_url || null);
         await checkSubscription(session.access_token);
       } catch (error) {
         console.error("Erro ao iniciar auth:", error);
@@ -262,6 +265,93 @@ const Settings = () => {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem válida.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 5MB.");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Remove old avatar if exists
+      await supabase.storage.from("avatars").remove([filePath]);
+
+      // Upload new avatar
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      // Add cache-busting param
+      const urlWithCache = `${publicUrl}?t=${Date.now()}`;
+
+      // Update user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: urlWithCache },
+      });
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(urlWithCache);
+      toast.success("Foto de perfil atualizada!");
+    } catch (error: any) {
+      console.error("Erro ao enviar foto:", error);
+      toast.error("Erro ao enviar foto. Tente novamente.");
+    } finally {
+      setIsUploadingAvatar(false);
+      // Reset file input
+      e.target.value = "";
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!user) return;
+    setIsUploadingAvatar(true);
+    try {
+      // List and remove all files in user folder
+      const { data: files } = await supabase.storage
+        .from("avatars")
+        .list(user.id);
+
+      if (files && files.length > 0) {
+        const filePaths = files.map((f) => `${user.id}/${f.name}`);
+        await supabase.storage.from("avatars").remove(filePaths);
+      }
+
+      // Clear avatar from user metadata
+      const { error } = await supabase.auth.updateUser({
+        data: { avatar_url: null },
+      });
+
+      if (error) throw error;
+
+      setAvatarUrl(null);
+      toast.success("Foto de perfil removida!");
+    } catch (error) {
+      console.error("Erro ao remover foto:", error);
+      toast.error("Erro ao remover foto.");
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-muted/30 flex items-center justify-center">
@@ -305,6 +395,60 @@ const Settings = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Avatar Upload */}
+            <div className="flex flex-col items-center gap-4 pb-2">
+              <div className="relative group">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="Foto de perfil"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-primary/20 shadow-lg"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-muted border-4 border-primary/10 flex items-center justify-center shadow-lg">
+                    <User className="w-10 h-10 text-muted-foreground" />
+                  </div>
+                )}
+                <label
+                  htmlFor="avatar-upload"
+                  className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center cursor-pointer shadow-md hover:scale-110 transition-transform"
+                >
+                  {isUploadingAvatar ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Camera className="w-4 h-4" />
+                  )}
+                </label>
+                <input
+                  id="avatar-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarUpload}
+                  disabled={isUploadingAvatar}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-muted-foreground">
+                  {avatarUrl ? "Clique no ícone para trocar" : "Adicione uma foto de perfil"}
+                </p>
+                {avatarUrl && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive h-7 px-2"
+                    onClick={handleAvatarRemove}
+                    disabled={isUploadingAvatar}
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Remover
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            <Separator />
+
             <div>
               <label className="text-sm font-medium text-muted-foreground">Email</label>
               <p className="text-foreground">{user?.email}</p>
