@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Brain, Sparkles, CheckCircle2, Star, Zap, Shield, ArrowRight, AlertTriangle, Instagram } from "lucide-react";
+import { Brain, Sparkles, CheckCircle2, Star, Zap, Shield, ArrowRight, AlertTriangle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -66,23 +66,10 @@ const Hero = () => {
       <div className="container px-4 py-8 md:py-16">
         <div className="max-w-5xl mx-auto text-center space-y-5">
           
-          {/* FREE PROMO BANNER */}
-          <a 
-            href="https://www.instagram.com/aprovi.a" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-gradient-to-r from-accent/30 to-primary/20 border-2 border-accent/50 shadow-xl animate-pulse hover:scale-105 transition-transform cursor-pointer"
-          >
-            <Instagram className="w-6 h-6 text-accent" />
-            <span className="text-sm md:text-base font-bold text-foreground text-center">
-              🎁 <span className="text-accent font-black">GRÁTIS!</span> Mande uma mensagem para nós no Instagram para ter seu acesso gratuito!
-            </span>
-          </a>
-
           {/* URGENCY BANNER - High impact */}
           <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-destructive/20 to-destructive/10 border-2 border-destructive/30 text-destructive shadow-lg">
             <AlertTriangle className="w-5 h-5 animate-pulse" />
-            <span className="text-sm md:text-base font-bold">⚡ ENEM 2025 está chegando — Comece a estudar agora</span>
+            <span className="text-sm md:text-base font-bold">⚡ ENEM 2026 está chegando — Comece a estudar agora</span>
           </div>
 
           {/* Logo with enhanced styling */}
