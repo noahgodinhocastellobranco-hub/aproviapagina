@@ -140,6 +140,26 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
   const avatarUrl = getUserAvatar(user);
   const firstName = userName.split(" ")[0];
 
+  // ENEM 2026 countdown — prova em 01/11/2026 (primeiro domingo de novembro)
+  const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+  useEffect(() => {
+    const enemDate = new Date("2026-11-01T12:00:00-03:00");
+    const update = () => {
+      const now = new Date();
+      const diff = Math.max(0, enemDate.getTime() - now.getTime());
+      setCountdown({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   // Streak fire system
   const todayKey = new Date().toISOString().split("T")[0];
   const [fireActive, setFireActive] = useState(false);
@@ -436,6 +456,42 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
 
       {/* Content */}
       <section className="container px-4 py-8 md:py-12 max-w-5xl mx-auto space-y-10">
+        {/* ENEM Countdown */}
+        <div className="rounded-2xl border-2 border-destructive/20 bg-gradient-to-r from-card via-card to-destructive/5 p-6 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-destructive/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-destructive/10 flex items-center justify-center shadow-sm">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-destructive uppercase tracking-wider">Contagem Regressiva</p>
+                <h3 className="text-lg font-bold text-foreground">ENEM 2026</h3>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 md:gap-4">
+              {[
+                { value: countdown.days, label: "dias" },
+                { value: countdown.hours, label: "horas" },
+                { value: countdown.minutes, label: "min" },
+                { value: countdown.seconds, label: "seg" },
+              ].map((item) => (
+                <div key={item.label} className="text-center">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-xl bg-background border-2 border-destructive/20 flex items-center justify-center shadow-sm">
+                    <span className="text-xl md:text-2xl font-black text-foreground tabular-nums">
+                      {String(item.value).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <p className="text-[10px] md:text-xs text-muted-foreground mt-1 font-medium">{item.label}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-muted-foreground font-medium md:max-w-[140px] text-center md:text-right">
+              Cada segundo conta. Continue estudando! 🚀
+            </p>
+          </div>
+        </div>
+
         {/* Daily Topic + Performance Chart */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Daily Topic Card */}
