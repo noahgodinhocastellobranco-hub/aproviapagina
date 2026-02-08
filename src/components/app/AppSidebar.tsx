@@ -16,7 +16,6 @@ import {
   Calendar,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarContent,
@@ -55,21 +54,52 @@ const practiceItems = [
   { title: "Consultar Curso", url: "/app/consultar-curso", icon: Search },
 ];
 
+const SidebarSection = ({ label, items }: { label: string; items: typeof mainItems }) => {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+
+  return (
+    <SidebarGroup>
+      <SidebarGroupLabel className="text-primary/70 font-semibold uppercase text-[11px] tracking-wider">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton asChild tooltip={item.title}>
+                <NavLink
+                  to={item.url}
+                  end={item.url === "/app"}
+                  className="text-primary hover:bg-primary/10 transition-colors"
+                  activeClassName="!bg-primary !text-primary-foreground font-semibold"
+                >
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+};
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const isMobile = useIsMobile();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10">
-            <Brain className="h-5 w-5 text-primary" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground">
+            <Brain className="h-5 w-5" />
           </div>
           {!collapsed && (
             <div>
-              <h2 className="font-bold text-foreground leading-none">AprovI.A</h2>
+              <h2 className="font-bold text-primary leading-none">AprovI.A</h2>
               <p className="text-xs text-muted-foreground">Assistente ENEM</p>
             </div>
           )}
@@ -77,72 +107,9 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Principal</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/app"}
-                      className="hover:bg-muted/50"
-                      activeClassName="bg-primary/10 text-primary font-semibold"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Estudos</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {studyItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-muted/50"
-                      activeClassName="bg-primary/10 text-primary font-semibold"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Praticar</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {practiceItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      className="hover:bg-muted/50"
-                      activeClassName="bg-primary/10 text-primary font-semibold"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        <SidebarSection label="Principal" items={mainItems} />
+        <SidebarSection label="Estudos" items={studyItems} />
+        <SidebarSection label="Praticar" items={practiceItems} />
       </SidebarContent>
 
       <SidebarFooter>
