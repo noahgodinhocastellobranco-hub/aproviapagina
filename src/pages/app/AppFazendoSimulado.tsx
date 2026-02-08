@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ClipboardList, CheckCircle2, XCircle, ArrowRight } from "lucide-react";
 
@@ -67,35 +66,27 @@ const AppFazendoSimulado = () => {
 
   if (showResult) {
     return (
-      <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6 text-center">
-        <div className="space-y-4 py-8">
-          <div className="text-6xl font-black text-primary">{score}/{sampleQuestions.length}</div>
-          <h2 className="text-2xl font-bold">Resultado do Simulado</h2>
-          <p className="text-muted-foreground">
-            Você acertou {score} de {sampleQuestions.length} questões ({Math.round((score / sampleQuestions.length) * 100)}%)
-          </p>
-          <Button onClick={restart} size="lg" className="gap-2">
-            Refazer Simulado
-          </Button>
-        </div>
+      <div className="flex flex-col items-center min-h-[calc(100vh-3rem)] p-6">
+        <div className="text-5xl font-black text-primary mb-2">{score}/{sampleQuestions.length}</div>
+        <h2 className="text-xl font-bold mb-1">Resultado</h2>
+        <p className="text-muted-foreground mb-6">
+          Você acertou {Math.round((score / sampleQuestions.length) * 100)}%
+        </p>
+        <Button onClick={restart} className="mb-8">Refazer Simulado</Button>
 
-        <div className="space-y-3 text-left">
+        <div className="space-y-2 max-w-md w-full">
           {sampleQuestions.map((q, i) => (
-            <Card key={q.id} className={answers[i] === q.correct ? "border-green-500/30" : "border-red-500/30"}>
-              <CardContent className="p-4 flex items-start gap-3">
-                {answers[i] === q.correct ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-                ) : (
-                  <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-                )}
-                <div>
-                  <p className="text-sm font-medium">{q.question}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Resposta correta: {q.options[q.correct]}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <div key={q.id} className={`flex items-start gap-3 rounded-xl border p-3 ${answers[i] === q.correct ? "border-green-500/30" : "border-red-500/30"}`}>
+              {answers[i] === q.correct ? (
+                <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+              ) : (
+                <XCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <p className="text-sm">{q.question}</p>
+                <p className="text-xs text-muted-foreground mt-1">Resposta: {q.options[q.correct]}</p>
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -103,51 +94,47 @@ const AppFazendoSimulado = () => {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-primary" />
-          Simulado Rápido
-        </h1>
-        <span className="text-sm text-muted-foreground font-medium">
-          {currentQ + 1} / {sampleQuestions.length}
-        </span>
+    <div className="flex flex-col items-center min-h-[calc(100vh-3rem)] p-6">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <ClipboardList className="w-8 h-8 text-primary" />
       </div>
+      <h1 className="text-2xl font-bold mb-2">Simulado Rápido</h1>
+      <p className="text-muted-foreground mb-6">
+        Questão {currentQ + 1} de {sampleQuestions.length}
+      </p>
 
       {/* Progress */}
-      <div className="w-full bg-muted rounded-full h-2">
+      <div className="w-full max-w-md bg-muted rounded-full h-1.5 mb-6">
         <div
-          className="bg-primary h-2 rounded-full transition-all"
+          className="bg-primary h-1.5 rounded-full transition-all"
           style={{ width: `${((currentQ + 1) / sampleQuestions.length) * 100}%` }}
         />
       </div>
 
-      <Card>
-        <CardContent className="p-6 space-y-4">
-          <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
-            {question.area}
-          </span>
-          <p className="text-lg font-medium">{question.question}</p>
-          <div className="space-y-2">
-            {question.options.map((opt, i) => (
-              <button
-                key={i}
-                onClick={() => selectAnswer(i)}
-                className={`w-full text-left p-3 rounded-lg border text-sm transition-all ${
-                  selectedAnswer === i
-                    ? "border-primary bg-primary/10 font-medium"
-                    : "border-border hover:bg-muted"
-                }`}
-              >
-                <span className="font-mono text-xs mr-2 text-muted-foreground">{String.fromCharCode(65 + i)}</span>
-                {opt}
-              </button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="max-w-md w-full space-y-4">
+        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+          {question.area}
+        </span>
+        <p className="text-base font-medium">{question.question}</p>
+        <div className="space-y-2">
+          {question.options.map((opt, i) => (
+            <button
+              key={i}
+              onClick={() => selectAnswer(i)}
+              className={`w-full text-left p-3 rounded-xl border text-sm transition-all ${
+                selectedAnswer === i
+                  ? "border-primary bg-primary/10 font-medium"
+                  : "hover:bg-muted"
+              }`}
+            >
+              <span className="font-mono text-xs mr-2 text-muted-foreground">{String.fromCharCode(65 + i)}</span>
+              {opt}
+            </button>
+          ))}
+        </div>
+      </div>
 
-      <div className="flex justify-between">
+      <div className="flex gap-3 mt-6">
         <Button
           variant="outline"
           onClick={() => setCurrentQ(Math.max(0, currentQ - 1))}
@@ -160,7 +147,7 @@ const AppFazendoSimulado = () => {
             Próxima <ArrowRight className="w-4 h-4" />
           </Button>
         ) : (
-          <Button onClick={finish} className="gap-1" disabled={answers.some((a) => a === null)}>
+          <Button onClick={finish} disabled={answers.some((a) => a === null)}>
             Finalizar
           </Button>
         )}

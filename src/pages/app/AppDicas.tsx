@@ -1,110 +1,95 @@
 import { Lightbulb, Brain, PenTool, Clock, CheckCircle2, Target } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const dicas = [
   {
     title: "Redação nota 1000",
     icon: PenTool,
-    color: "text-green-500",
     tips: [
-      "Sempre apresente uma proposta de intervenção detalhada com agente, ação, modo/meio, detalhamento e finalidade",
-      "Use conectivos variados para garantir coesão entre parágrafos",
-      "Cite pelo menos 2 referências externas (filósofos, dados, leis)",
-      "Mantenha entre 25-30 linhas para uma redação completa",
+      "Sempre apresente uma proposta de intervenção detalhada",
+      "Use conectivos variados para garantir coesão",
+      "Cite pelo menos 2 referências externas",
+      "Mantenha entre 25-30 linhas",
     ],
   },
   {
-    title: "Gestão do Tempo na Prova",
+    title: "Gestão do Tempo",
     icon: Clock,
-    color: "text-blue-500",
     tips: [
-      "Comece pelas questões que você domina — ganhe confiança",
-      "Reserve 1 hora para a redação — não deixe para o final",
-      "Se travar em uma questão, pule e volte depois",
-      "Use os últimos 15 minutos para preencher o gabarito com calma",
+      "Comece pelas questões que você domina",
+      "Reserve 1 hora para a redação",
+      "Se travar, pule e volte depois",
+      "Use os últimos 15 min para o gabarito",
     ],
   },
   {
     title: "Interpretação de Texto",
     icon: Brain,
-    color: "text-purple-500",
     tips: [
-      "Leia primeiro o enunciado e alternativas antes do texto",
-      "Grife palavras-chave no texto e no enunciado",
-      "Elimine alternativas absurdas antes de escolher",
-      "A resposta está sempre no texto — evite opiniões pessoais",
+      "Leia o enunciado antes do texto",
+      "Grife palavras-chave",
+      "Elimine alternativas absurdas",
+      "A resposta está sempre no texto",
     ],
   },
   {
-    title: "Matemática sem Medo",
+    title: "Matemática",
     icon: Target,
-    color: "text-orange-500",
     tips: [
-      "Domine regra de três, porcentagem e razão/proporção — caem sempre",
-      "Faça muitas questões de geometria plana e espacial",
-      "Aprenda a interpretar gráficos e tabelas — são questões fáceis",
-      "Revise funções do 1º e 2º grau — aparecem muito",
+      "Domine regra de três e porcentagem",
+      "Faça muitas questões de geometria",
+      "Aprenda a interpretar gráficos",
+      "Revise funções do 1º e 2º grau",
     ],
   },
   {
     title: "Ciências da Natureza",
     icon: Lightbulb,
-    color: "text-yellow-500",
     tips: [
-      "Foque em ecologia, genética e fisiologia em Biologia",
-      "Em Física, priorize mecânica, energia e eletricidade",
-      "Em Química, domine estequiometria e química orgânica",
-      "Relacione os conteúdos com questões do cotidiano",
+      "Foque em ecologia e genética",
+      "Priorize mecânica e eletricidade",
+      "Domine estequiometria",
+      "Relacione com o cotidiano",
     ],
   },
   {
     title: "Véspera da Prova",
     icon: CheckCircle2,
-    color: "text-red-500",
     tips: [
-      "Não estude conteúdo novo — apenas revise resumos",
-      "Durma pelo menos 8 horas na noite anterior",
-      "Prepare documentos, caneta preta e lanche com antecedência",
-      "Chegue ao local da prova com 1 hora de antecedência",
+      "Não estude conteúdo novo",
+      "Durma pelo menos 8 horas",
+      "Prepare documentos e caneta",
+      "Chegue 1 hora antes",
     ],
   },
 ];
 
 const AppDicas = () => {
   return (
-    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-yellow-500/10 flex items-center justify-center">
-            <Lightbulb className="w-5 h-5 text-yellow-500" />
-          </div>
-          Dicas Estratégicas
-        </h1>
-        <p className="text-muted-foreground">
-          Estratégias comprovadas para maximizar sua nota no ENEM.
-        </p>
+    <div className="flex flex-col items-center min-h-[calc(100vh-3rem)] p-6">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <Lightbulb className="w-8 h-8 text-primary" />
       </div>
+      <h1 className="text-2xl font-bold mb-2">Dicas Estratégicas</h1>
+      <p className="text-muted-foreground text-center max-w-md mb-8">
+        Estratégias comprovadas para maximizar sua nota no ENEM.
+      </p>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 max-w-2xl w-full">
         {dicas.map((dica) => (
-          <Card key={dica.title} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-3 text-lg">
-                <dica.icon className={`w-5 h-5 ${dica.color}`} />
-                {dica.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {dica.tips.map((tip, i) => (
-                  <li key={i} className="flex gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-accent shrink-0 mt-0.5" />
-                    <span>{tip}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <div key={dica.title} className="rounded-xl border p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <dica.icon className="w-4 h-4 text-primary" />
+              <h3 className="font-semibold text-sm">{dica.title}</h3>
+            </div>
+            <ul className="space-y-1.5">
+              {dica.tips.map((tip, i) => (
+                <li key={i} className="flex gap-2 text-sm text-muted-foreground">
+                  <span className="text-primary shrink-0">•</span>
+                  <span>{tip}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
       </div>
     </div>
