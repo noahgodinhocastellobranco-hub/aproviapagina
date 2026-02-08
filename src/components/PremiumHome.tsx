@@ -1,11 +1,14 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Rocket, Settings, LogOut, MessageSquare, User, BookOpen, Brain, Sparkles, ChevronRight, LayoutDashboard } from "lucide-react";
+import {
+  Rocket, Settings, LogOut, MessageSquare, User, BookOpen, Brain,
+  Sparkles, ChevronRight, LayoutDashboard, Zap, Star, Shield,
+  CheckCircle2, FileText, GraduationCap, Timer, PenTool, Moon, Sun,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
-import { Moon, Sun } from "lucide-react";
+import SupportChat from "@/components/SupportChat";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +55,15 @@ const ENEM_TOPICS = [
   { subject: "Matemática", topic: "Funções e Gráficos", icon: "📈", tip: "Revise funções do 1° e 2° grau, exponencial e logarítmica." },
   { subject: "História", topic: "Guerra Fria", icon: "🌍", tip: "Estude bipolaridade, corrida espacial e influências na América Latina." },
   { subject: "Física", topic: "Óptica e Ondas", icon: "🌊", tip: "Revise reflexão, refração, difração e propriedades das ondas." },
+];
+
+const PLATFORM_FEATURES = [
+  { icon: PenTool, label: "Correção de Redação", desc: "Feedback detalhado com IA" },
+  { icon: Brain, label: "Chat AprovI.A", desc: "Tire dúvidas 24/7" },
+  { icon: FileText, label: "Simulados ENEM", desc: "Provas de 2009 a 2025" },
+  { icon: GraduationCap, label: "Professor Virtual", desc: "Explicações personalizadas" },
+  { icon: Timer, label: "Pomodoro", desc: "Gestão de tempo inteligente" },
+  { icon: Star, label: "Plano de Estudos", desc: "Baseado nas suas dificuldades" },
 ];
 
 function getGreeting(): string {
@@ -107,10 +119,11 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-primary/5">
-      {/* Header with profile */}
+    <div className="min-h-screen bg-background">
+      {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container px-4 py-3 flex justify-between items-center">
+          {/* Profile (left) */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-3 hover:opacity-80 transition-opacity focus:outline-none">
@@ -118,16 +131,20 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
                   <img
                     src={avatarUrl}
                     alt="Foto de perfil"
-                    className="w-10 h-10 rounded-full border-2 border-primary/30 object-cover"
+                    className="w-10 h-10 rounded-full border-2 border-primary/30 object-cover shadow-sm"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-primary/10 border-2 border-primary/30 flex items-center justify-center">
                     <User className="w-5 h-5 text-primary" />
                   </div>
                 )}
-                <span className="text-sm font-medium text-foreground hidden sm:inline">
-                  {firstName}
-                </span>
+                <div className="hidden sm:flex flex-col items-start">
+                  <span className="text-sm font-semibold text-foreground leading-tight">{firstName}</span>
+                  <span className="text-[11px] text-primary font-medium leading-tight flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
+                    PRO Ativo
+                  </span>
+                </div>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
@@ -169,98 +186,186 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Right side */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="rounded-full"
-            >
-              {resolvedTheme === "dark" ? (
-                <Sun className="w-5 h-5" />
-              ) : (
-                <Moon className="w-5 h-5" />
-              )}
+            <SupportChat />
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+              {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="container px-4 py-8 md:py-12 max-w-3xl mx-auto space-y-8">
-        {/* Greeting */}
-        <div className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-            {greeting}, <span className="text-primary">{firstName}</span>! 👋
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Pronto para mais uma sessão de estudos?
-          </p>
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        {/* Animated background — same style as landing */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-10 left-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-radial from-primary/10 to-transparent rounded-full blur-3xl" />
         </div>
 
-        {/* CTA - Enter App */}
-        <Button
-          size="lg"
-          className="w-full text-lg py-8 shadow-xl hover:shadow-primary/30 hover:scale-[1.02] transition-all bg-gradient-to-r from-primary via-primary to-primary/90 group font-bold"
-          asChild
-        >
-          <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
-            <Rocket className="mr-3 h-6 w-6 group-hover:animate-bounce" />
-            Entrar no Aplicativo
-            <ChevronRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-          </a>
-        </Button>
+        <div className="container px-4 py-10 md:py-16">
+          <div className="max-w-4xl mx-auto space-y-8">
+            {/* Greeting + Logo */}
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/20 border border-accent/30 text-accent-foreground shadow-sm">
+                <Shield className="w-4 h-4 text-accent" />
+                <span className="text-sm font-bold text-accent">Plano PRO Ativo</span>
+              </div>
 
-        {/* Daily Topic Card */}
-        <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-card to-primary/5 p-6 md:p-8 space-y-4 shadow-lg">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">{dailyTopic.icon}</span>
-            <div>
-              <p className="text-xs font-semibold text-primary uppercase tracking-wider">
-                Matéria do dia
-              </p>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground">
-                {dailyTopic.subject}
+              <div className="flex items-center justify-center gap-3">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl scale-150" />
+                  <Brain className="w-12 h-12 md:w-14 md:h-14 text-primary relative" strokeWidth={1.5} />
+                  <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-accent absolute -top-1 -right-1 animate-bounce" />
+                </div>
+                <h1 className="text-3xl md:text-5xl font-black bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  AprovI.A
+                </h1>
+              </div>
+
+              <h2 className="text-2xl md:text-4xl font-bold text-foreground leading-tight">
+                {greeting}, <span className="text-primary">{firstName}</span>! 👋
               </h2>
+              <p className="text-lg text-muted-foreground max-w-xl">
+                Sua plataforma de estudos com IA está pronta. Continue de onde parou!
+              </p>
+            </div>
+
+            {/* Main CTA */}
+            <div className="flex justify-center">
+              <Button
+                size="lg"
+                className="text-lg md:text-xl px-12 md:px-16 py-7 md:py-8 shadow-2xl hover:shadow-primary/30 hover:scale-105 transition-all bg-gradient-to-r from-primary via-primary to-primary/90 relative group font-bold"
+                asChild
+              >
+                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
+                  <Rocket className="mr-3 h-6 w-6 group-hover:animate-bounce" />
+                  ENTRAR NO APLICATIVO
+                  <ChevronRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </a>
+              </Button>
+            </div>
+
+            {/* Trust Signals */}
+            <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
+              <span className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-accent" />
+                Acesso ilimitado
+              </span>
+              <span className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-accent" />
+                IA disponível 24/7
+              </span>
+              <span className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-accent" />
+                Suporte humanizado
+              </span>
             </div>
           </div>
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-primary" />
-              {dailyTopic.topic}
-            </h3>
-            <p className="text-muted-foreground leading-relaxed">
-              {dailyTopic.tip}
+        </div>
+      </section>
+
+      {/* Content */}
+      <section className="container px-4 py-8 md:py-12 max-w-5xl mx-auto space-y-10">
+        {/* Daily Topic Card */}
+        <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 p-6 md:p-8 shadow-lg relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+          <div className="relative space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl shadow-sm">
+                {dailyTopic.icon}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  Matéria do Dia
+                </p>
+                <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                  {dailyTopic.subject}: {dailyTopic.topic}
+                </h3>
+              </div>
+            </div>
+            <p className="text-muted-foreground leading-relaxed pl-[4.5rem]">
+              💡 <strong>Dica:</strong> {dailyTopic.tip}
             </p>
+            <div className="pl-[4.5rem]">
+              <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg" asChild>
+                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
+                  <BookOpen className="w-4 h-4" />
+                  Estudar este tema agora
+                </a>
+              </Button>
+            </div>
           </div>
-          <Button variant="outline" className="gap-2 border-primary/30 text-primary hover:bg-primary/10" asChild>
+        </div>
+
+        {/* Features Grid */}
+        <div className="space-y-4">
+          <h3 className="text-xl font-bold text-foreground text-center">
+            Suas ferramentas PRO
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {PLATFORM_FEATURES.map((feature) => (
+              <a
+                key={feature.label}
+                href="https://aproviaapp.lovable.app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group text-center p-5 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-md hover:shadow-lg hover:border-primary/30 hover:scale-[1.02] transition-all"
+              >
+                <feature.icon className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
+                <div className="text-sm font-bold text-foreground">{feature.label}</div>
+                <div className="text-xs text-muted-foreground mt-1">{feature.desc}</div>
+              </a>
+            ))}
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Button
+            size="lg"
+            className="w-full py-6 gap-3 bg-gradient-to-r from-primary via-primary to-primary/90 shadow-lg hover:shadow-xl font-bold"
+            asChild
+          >
             <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
-              <Brain className="w-4 h-4" />
-              Estudar este tema no App
+              <Rocket className="w-5 h-5" />
+              Abrir App
             </a>
+          </Button>
+          <Button size="lg" variant="outline" className="w-full py-6 gap-3 border-2" asChild>
+            <Link to="/settings">
+              <Settings className="w-5 h-5" />
+              Configurações
+            </Link>
+          </Button>
+          <Button size="lg" variant="outline" className="w-full py-6 gap-3 border-2 border-primary/30 text-primary hover:bg-primary/5" asChild>
+            <Link to="/settings">
+              <MessageSquare className="w-5 h-5" />
+              Falar com Suporte
+            </Link>
           </Button>
         </div>
 
-        {/* Quick links */}
-        <div className="grid grid-cols-2 gap-4">
-          <Link
-            to="/settings"
-            className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
-          >
-            <Settings className="w-5 h-5 text-muted-foreground" />
-            <span className="text-sm font-medium">Configurações</span>
-          </Link>
-          <a
-            href="https://aproviaapp.lovable.app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-3 p-4 rounded-xl border bg-card hover:bg-muted/50 transition-colors"
-          >
-            <Sparkles className="w-5 h-5 text-primary" />
-            <span className="text-sm font-medium">Abrir App</span>
-          </a>
+        {/* Motivational */}
+        <div className="text-center py-6 space-y-2">
+          <p className="text-muted-foreground italic text-lg">
+            "A consistência é mais importante que a perfeição."
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Continue estudando um pouco todos os dias — cada minuto conta! 🚀
+          </p>
         </div>
-      </main>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t bg-muted/30">
+        <div className="container px-4 py-6 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} AprovI.A — Todos os direitos reservados</p>
+        </div>
+      </footer>
     </div>
   );
 };
