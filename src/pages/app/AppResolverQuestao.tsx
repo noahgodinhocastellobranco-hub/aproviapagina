@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { HelpCircle, Send, Loader2, Trash2, Camera } from "lucide-react";
+import { HelpCircle, Send, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
@@ -49,9 +49,9 @@ const AppResolverQuestao = () => {
     <div className="flex flex-col h-[calc(100vh-3rem)]">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 opacity-70">
-            <div className="w-20 h-20 rounded-3xl bg-violet-500/10 flex items-center justify-center">
-              <HelpCircle className="w-10 h-10 text-violet-500" />
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <HelpCircle className="w-8 h-8 text-primary" />
             </div>
             <h2 className="text-xl font-bold">Resolver Questão</h2>
             <p className="text-muted-foreground max-w-md">

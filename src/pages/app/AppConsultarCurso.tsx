@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, GraduationCap, Loader2 } from "lucide-react";
+import { Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const AppConsultarCurso = () => {
@@ -46,56 +45,43 @@ Se não tiver dados exatos, dê estimativas baseadas em anos anteriores.`,
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl mx-auto space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-            <Search className="w-5 h-5 text-indigo-500" />
-          </div>
-          Consultar Curso
-        </h1>
-        <p className="text-muted-foreground">
-          Descubra notas de corte, universidades e informações sobre qualquer curso.
-        </p>
+    <div className="flex flex-col items-center min-h-[calc(100vh-3rem)] p-6">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+        <Search className="w-8 h-8 text-primary" />
       </div>
+      <h1 className="text-2xl font-bold mb-2">Consultar Curso</h1>
+      <p className="text-muted-foreground text-center max-w-md mb-8">
+        Descubra notas de corte, universidades e informações sobre qualquer curso.
+      </p>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 max-w-md w-full mb-6">
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Ex: Medicina, Engenharia Civil, Direito..."
+          placeholder="Ex: Medicina, Engenharia Civil..."
           onKeyDown={(e) => e.key === "Enter" && handleSearch()}
         />
-        <Button onClick={handleSearch} disabled={!query.trim() || isLoading} className="gap-2">
+        <Button onClick={handleSearch} disabled={!query.trim() || isLoading} size="icon">
           {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-          Buscar
         </Button>
       </div>
 
       {result && (
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <GraduationCap className="w-5 h-5 text-primary" />
-              <h3 className="font-bold text-lg">{query}</h3>
-            </div>
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-              {result}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border p-6 max-w-lg w-full">
+          <h3 className="font-bold text-lg mb-3">{query}</h3>
+          <div className="text-sm text-muted-foreground whitespace-pre-wrap">{result}</div>
+        </div>
       )}
 
       {!result && !isLoading && (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 max-w-md w-full">
           {["Medicina", "Direito", "Engenharia Civil", "Psicologia", "Administração", "Ciência da Computação"].map((curso) => (
             <button
               key={curso}
-              onClick={() => { setQuery(curso); }}
-              className="p-4 rounded-xl border bg-card hover:bg-muted transition-colors text-left"
+              onClick={() => setQuery(curso)}
+              className="p-3 rounded-xl border hover:bg-muted transition-colors text-sm font-medium text-left"
             >
-              <span className="font-medium text-sm">{curso}</span>
-              <p className="text-xs text-muted-foreground mt-1">Clique para consultar</p>
+              {curso}
             </button>
           ))}
         </div>
