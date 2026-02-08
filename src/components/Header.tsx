@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, Settings, ExternalLink, LayoutDashboard, Rocket, Sparkles, Moon, Sun } from "lucide-react";
+import { LogOut, User, Settings, LayoutDashboard, Rocket, Sparkles, Moon, Sun } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -22,19 +22,104 @@ const Header = () => {
   const [isChecking, setIsChecking] = useState(true);
   const { theme, setTheme, resolvedTheme } = useTheme();
   const navigate = useNavigate();
+  const isCheckingRef = useRef(false);
+
+  const checkSubscription = useCallback(async (accessToken: string) => {
+    // Prevent duplicate concurrent calls
+    if (isCheckingRef.current) return;
+    isCheckingRef.current = true;
+
+    try {
+      console.log("🔍 Verificando status de assinatura...");
+
+      const { data, error } = await supabase.functions.invoke("check-subscription", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (error) {
+        console.error("❌ Erro ao verificar assinatura:", error);
+        setHasSubscription(false);
+        return;
+      }
+
+      console.log("📊 Resposta da verificação de assinatura:", data);
+      console.log("✅ hasSubscription:", data?.hasSubscription);
+      setHasSubscription(data?.hasSubscription || false);
+    } catch (error) {
+      console.error("❌ Erro ao verificar assinatura:", error);
+      setHasSubscription(false);
+    } finally {
+      isCheckingRef.current = false;
+    }
+  }, []);
+
+  const checkAdminRole = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: userId,
+        _role: 'admin'
+      });
+
+      if (!error) {
+        setIsAdmin(data || false);
+      }
+    } catch (error) {
+      console.error("Erro ao verificar role de admin:", error);
+    }
+  }, []);
 
   useEffect(() => {
-    checkUserAndSubscription();
+    let isMounted = true;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const init = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (!session) {
+          setUser(null);
+          setHasSubscription(false);
+          setIsAdmin(false);
+          setIsChecking(false);
+          return;
+        }
+
+        setUser(session.user);
+        // Run checks in parallel, using existing access_token
+        await Promise.all([
+          checkSubscription(session.access_token),
+          checkAdminRole(session.user.id),
+        ]);
+      } catch (error) {
+        console.error("Erro ao verificar sessão:", error);
+        if (isMounted) {
+          setUser(null);
+          setHasSubscription(false);
+          setIsAdmin(false);
+        }
+      } finally {
+        if (isMounted) setIsChecking(false);
+      }
+    };
+
+    init();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
       if (session?.user) {
         setUser(session.user);
+        // Defer to avoid deadlock, use token from session directly
         setTimeout(() => {
-          checkSubscription();
-          checkAdminRole(session.user.id);
+          if (isMounted) {
+            checkSubscription(session.access_token);
+            checkAdminRole(session.user.id);
+          }
         }, 0);
       } else {
-        // Limpar tudo quando não há sessão
         setUser(null);
         setHasSubscription(false);
         setIsAdmin(false);
@@ -42,151 +127,32 @@ const Header = () => {
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const checkUserAndSubscription = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        setUser(null);
-        setHasSubscription(false);
-        setIsAdmin(false);
-        setIsChecking(false);
-        return;
-      }
-
-      setUser(session.user);
-      await checkSubscription();
-      await checkAdminRole(session.user.id);
-    } catch (error) {
-      console.error("Erro ao verificar sessão:", error);
-      setUser(null);
-      setHasSubscription(false);
-      setIsAdmin(false);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
-  const checkAdminRole = async (userId: string) => {
-    try {
-      const { data, error } = await supabase.rpc('has_role', {
-        _user_id: userId,
-        _role: 'admin'
-      });
-      
-      if (!error) {
-        setIsAdmin(data || false);
-      }
-    } catch (error) {
-      console.error("Erro ao verificar role de admin:", error);
-    }
-  };
-
-  const checkSubscription = async () => {
-    try {
-      console.log("🔍 Verificando status de assinatura...");
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        console.log("❌ Sem sessão ativa");
-        setHasSubscription(false);
-        setIsChecking(false);
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("check-subscription", {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        console.error("❌ Erro ao verificar assinatura:", error);
-        setHasSubscription(false);
-        setIsChecking(false);
-        return;
-      }
-
-      console.log("📊 Resposta da verificação de assinatura:", data);
-      console.log("✅ hasSubscription:", data?.hasSubscription);
-      
-      setHasSubscription(data?.hasSubscription || false);
-      setIsChecking(false);
-    } catch (error) {
-      console.error("❌ Erro ao verificar assinatura:", error);
-      setHasSubscription(false);
-      setIsChecking(false);
-    }
-  };
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [checkSubscription, checkAdminRole]);
 
   const handleLogout = async () => {
     try {
-      // Limpar estados primeiro
       setUser(null);
       setHasSubscription(false);
       setIsAdmin(false);
-      
-      // Fazer signout
+
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Erro ao fazer logout:", error);
-        // Mesmo com erro, limpar localStorage manualmente
-        localStorage.removeItem('supabase.auth.token');
       }
-      
+
       toast.success("Logout realizado com sucesso");
       navigate("/");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
-      // Em caso de erro, limpar localStorage e redirecionar
-      localStorage.removeItem('supabase.auth.token');
       setUser(null);
       setHasSubscription(false);
       setIsAdmin(false);
       navigate("/");
       toast.error("Sessão encerrada");
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (!confirm("⚠️ TEM CERTEZA?\n\nVocê deseja realmente cancelar sua assinatura?\n\nVocê perderá o acesso imediato ao aplicativo AprovI.A.")) {
-      return;
-    }
-
-    try {
-      console.log("🔄 Iniciando cancelamento de assinatura...");
-      
-      const { data, error } = await supabase.functions.invoke("cancel-subscription");
-      
-      if (error) {
-        console.error("❌ Erro ao cancelar:", error);
-        toast.error("Erro ao cancelar assinatura");
-        return;
-      }
-
-      console.log("✅ Resposta do cancelamento:", data);
-
-      if (data?.success) {
-        toast.success("✅ Assinatura cancelada com sucesso!");
-        console.log("🔄 Atualizando status de assinatura...");
-        
-        // Atualizar o estado imediatamente
-        setHasSubscription(false);
-        
-        // Redirecionar para a página de planos após 2 segundos
-        setTimeout(() => {
-          console.log("➡️ Redirecionando para /pricing");
-          navigate("/pricing");
-        }, 2000);
-      } else {
-        toast.error("Erro ao processar cancelamento");
-      }
-    } catch (error) {
-      console.error("❌ Erro ao cancelar assinatura:", error);
-      toast.error("Erro ao cancelar assinatura");
     }
   };
 
@@ -266,7 +232,7 @@ const Header = () => {
             </Link>
           </Button>
         )}
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
