@@ -19,8 +19,10 @@ import { z } from "zod";
 const emailSchema = z.string().trim().email({ message: "Email inválido" });
 const passwordSchema = z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" });
 const nameSchema = z.string().trim().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }).max(100, { message: "Nome muito longo" });
+const loginIdentifierSchema = z.string().trim().min(3, { message: "Digite seu email ou nome completo" }).max(255);
 
 const Auth = () => {
+  const [loginIdentifier, setLoginIdentifier] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -109,6 +111,15 @@ const Auth = () => {
     };
   }, [navigate]);
 
+  const isEmailFormat = (value: string) => {
+    try {
+      emailSchema.parse(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -116,34 +127,68 @@ const Auth = () => {
 
     setFormError(null);
 
-    if (!email || !password || !fullName) {
-      const msg = "Preencha todos os campos";
-      setFormError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    try {
-      emailSchema.parse(email);
-      passwordSchema.parse(password);
-      nameSchema.parse(fullName);
-    } catch (error: any) {
-      if (error instanceof z.ZodError) {
-        const msg = error.errors[0].message;
+    if (isLogin) {
+      if (!loginIdentifier || !password) {
+        const msg = "Preencha todos os campos";
         setFormError(msg);
         toast.error(msg);
+        return;
       }
-      return;
+
+      try {
+        loginIdentifierSchema.parse(loginIdentifier);
+        passwordSchema.parse(password);
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          const msg = error.errors[0].message;
+          setFormError(msg);
+          toast.error(msg);
+        }
+        return;
+      }
+    } else {
+      if (!email || !password || !fullName) {
+        const msg = "Preencha todos os campos";
+        setFormError(msg);
+        toast.error(msg);
+        return;
+      }
+
+      try {
+        emailSchema.parse(email);
+        passwordSchema.parse(password);
+        nameSchema.parse(fullName);
+      } catch (error: any) {
+        if (error instanceof z.ZodError) {
+          const msg = error.errors[0].message;
+          setFormError(msg);
+          toast.error(msg);
+        }
+        return;
+      }
     }
 
     setIsLoading(true);
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        let loginEmail = loginIdentifier.trim();
+
+        // Se não for email, buscar email pelo nome
+        if (!isEmailFormat(loginEmail)) {
+          const { data, error: lookupError } = await supabase.functions.invoke("lookup-email", {
+            body: { name: loginEmail },
+          });
+
+          if (lookupError || !data?.email) {
+            throw new Error(data?.error || "Usuário não encontrado com esse nome");
+          }
+
+          loginEmail = data.email;
+        }
+
+        const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (error) throw error;
-        // Atualizar nome nos metadados ao fazer login
-        await supabase.auth.updateUser({ data: { full_name: fullName } });
         toast.success("Login realizado!");
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -171,9 +216,11 @@ const Auth = () => {
         msg = "Email já cadastrado. Faça login.";
         setIsLogin(true);
       } else if (raw.includes("Invalid login credentials")) {
-        msg = "Email ou senha incorretos";
+        msg = "Email/nome ou senha incorretos";
       } else if (raw.toLowerCase().includes("email not confirmed")) {
         msg = "Confirme seu email antes de entrar";
+      } else if (raw.includes("não encontrado")) {
+        msg = raw;
       }
 
       setFormError(msg);
@@ -309,38 +356,60 @@ const Auth = () => {
               )}
 
               <form onSubmit={handleAuth} className="space-y-5">
-                <div className="space-y-2">
-                    <label htmlFor="fullName" className="text-sm font-medium flex items-center gap-2">
+                {isLogin ? (
+                  <div className="space-y-2">
+                    <label htmlFor="loginIdentifier" className="text-sm font-medium flex items-center gap-2">
                       <User className="w-4 h-4 text-muted-foreground" />
-                      Nome Completo
+                      Email ou Nome Completo
                     </label>
                     <Input
-                      id="fullName"
+                      id="loginIdentifier"
                       type="text"
-                      placeholder="Seu nome completo"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="seu@email.com ou seu nome completo"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
                       disabled={isLoading}
                       required
                       className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                     />
                   </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <label htmlFor="fullName" className="text-sm font-medium flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        Nome Completo
+                      </label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        placeholder="Seu nome completo"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        disabled={isLoading}
+                        required
+                        className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                      />
+                    </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                    <Mail className="w-4 h-4 text-muted-foreground" />
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={isLoading}
-                    className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
-                  />
-                </div>
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        Email
+                      </label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="seu@email.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={isLoading}
+                        required
+                        className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
+                      />
+                    </div>
+                  </>
+                )}
 
                 <div className="space-y-2">
                   <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
