@@ -429,7 +429,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
               >
                 <Link to="/app" onClick={handleAppClick}>
                   <Rocket className="mr-3 h-6 w-6 group-hover:animate-bounce" />
-                  ENTRAR NO APLICATIVO
+                  COMECE A ESTUDAR
                   <ChevronRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
@@ -629,7 +629,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
           >
             <Link to="/app" onClick={handleAppClick}>
               <Rocket className="w-5 h-5" />
-              Abrir App
+              Comece a Estudar
             </Link>
           </Button>
           <Button size="lg" variant="outline" className="w-full py-6 gap-3 border-2" asChild>
