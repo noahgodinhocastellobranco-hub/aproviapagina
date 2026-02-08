@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Rocket, Settings, LogOut, MessageSquare, User, BookOpen, Brain,
   Sparkles, ChevronRight, LayoutDashboard, Zap, Star, Shield,
-  CheckCircle2, FileText, GraduationCap, Timer, PenTool, Moon, Sun, Flame,
+  CheckCircle2, FileText, GraduationCap, Timer, PenTool, Moon, Sun, Flame, TrendingUp,
 } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -140,32 +141,70 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
   const firstName = userName.split(" ")[0];
 
   // Streak fire system
-  const todayKey = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  const todayKey = new Date().toISOString().split("T")[0];
   const [fireActive, setFireActive] = useState(false);
   const [justActivated, setJustActivated] = useState(false);
   const [streakDays, setStreakDays] = useState(0);
+  const [visitHistory, setVisitHistory] = useState<Record<string, number>>({});
 
+  // Load visit history and streak on mount
   useEffect(() => {
     const storedDate = localStorage.getItem("aprovia_fire_date");
     const storedStreak = parseInt(localStorage.getItem("aprovia_fire_streak") || "0", 10);
+    const storedVisits = JSON.parse(localStorage.getItem("aprovia_visits") || "{}") as Record<string, number>;
+    setVisitHistory(storedVisits);
     
     if (storedDate === todayKey) {
       setFireActive(true);
       setStreakDays(storedStreak);
     } else {
-      // Check if yesterday was active to maintain streak
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayKey = yesterday.toISOString().split("T")[0];
       
       if (storedDate === yesterdayKey) {
-        setStreakDays(storedStreak); // Streak continues but not yet activated today
+        setStreakDays(storedStreak);
       } else {
-        setStreakDays(0); // Streak broken
+        setStreakDays(0);
         localStorage.setItem("aprovia_fire_streak", "0");
       }
       setFireActive(false);
     }
+  }, [todayKey]);
+
+  // Build chart data for last 7 days
+  const chartData = useMemo(() => {
+    const days: { day: string; acessos: number }[] = [];
+    const weekDays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      days.push({
+        day: weekDays[d.getDay()],
+        acessos: visitHistory[key] || 0,
+      });
+    }
+    return days;
+  }, [visitHistory]);
+
+  const totalVisits = useMemo(() => {
+    return Object.values(visitHistory).reduce((sum, v) => sum + v, 0);
+  }, [visitHistory]);
+
+  const recordVisit = useCallback(() => {
+    const stored = JSON.parse(localStorage.getItem("aprovia_visits") || "{}") as Record<string, number>;
+    stored[todayKey] = (stored[todayKey] || 0) + 1;
+    
+    // Keep only last 30 days
+    const keys = Object.keys(stored).sort();
+    if (keys.length > 30) {
+      const toRemove = keys.slice(0, keys.length - 30);
+      toRemove.forEach((k) => delete stored[k]);
+    }
+    
+    localStorage.setItem("aprovia_visits", JSON.stringify(stored));
+    setVisitHistory({ ...stored });
   }, [todayKey]);
 
   const activateFire = useCallback(() => {
@@ -187,13 +226,12 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
     setFireActive(true);
     setStreakDays(newStreak);
     setJustActivated(true);
-    
-    // Remove animation class after it plays
     setTimeout(() => setJustActivated(false), 1500);
   }, [fireActive, todayKey]);
 
   const handleAppClick = () => {
     activateFire();
+    recordVisit();
   };
 
   // Listen for returning focus (user came back from app)
@@ -398,34 +436,109 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
 
       {/* Content */}
       <section className="container px-4 py-8 md:py-12 max-w-5xl mx-auto space-y-10">
-        {/* Daily Topic Card */}
-        <div className="rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 p-6 md:p-8 shadow-lg relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-          <div className="relative space-y-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl shadow-sm">
-                {dailyTopic.icon}
+        {/* Daily Topic + Performance Chart */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Daily Topic Card */}
+          <div className="lg:col-span-3 rounded-2xl border-2 border-primary/20 bg-gradient-to-br from-card via-card to-primary/5 p-6 md:p-8 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative space-y-4">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-3xl shadow-sm">
+                  {dailyTopic.icon}
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
+                    <Zap className="w-3 h-3" />
+                    Matéria do Dia
+                  </p>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
+                    {dailyTopic.subject}: {dailyTopic.topic}
+                  </h3>
+                </div>
               </div>
-              <div>
-                <p className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  Matéria do Dia
-                </p>
-                <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                  {dailyTopic.subject}: {dailyTopic.topic}
-                </h3>
+              <p className="text-muted-foreground leading-relaxed pl-[4.5rem]">
+                💡 <strong>Dica:</strong> {dailyTopic.tip}
+              </p>
+              <div className="pl-[4.5rem]">
+                <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg" asChild>
+                  <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer" onClick={handleAppClick}>
+                    <BookOpen className="w-4 h-4" />
+                    Estudar este tema agora
+                  </a>
+                </Button>
               </div>
             </div>
-            <p className="text-muted-foreground leading-relaxed pl-[4.5rem]">
-              💡 <strong>Dica:</strong> {dailyTopic.tip}
-            </p>
-            <div className="pl-[4.5rem]">
-              <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg" asChild>
-                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer" onClick={handleAppClick}>
-                  <BookOpen className="w-4 h-4" />
-                  Estudar este tema agora
-                </a>
-              </Button>
+          </div>
+
+          {/* Performance Chart */}
+          <div className="lg:col-span-2 rounded-2xl border-2 border-accent/20 bg-gradient-to-br from-card via-card to-accent/5 p-6 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-32 h-32 bg-accent/5 rounded-full blur-2xl -translate-y-1/2 -translate-x-1/2" />
+            <div className="relative space-y-4 h-full flex flex-col">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-accent uppercase tracking-wider flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" />
+                    Seu Desempenho
+                  </p>
+                  <h3 className="text-lg font-bold text-foreground">
+                    Últimos 7 dias
+                  </h3>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-accent">{totalVisits}</p>
+                  <p className="text-[11px] text-muted-foreground">acessos total</p>
+                </div>
+              </div>
+              
+              <div className="flex-1 min-h-[140px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorAcessos" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--accent))" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="hsl(var(--accent))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="day"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                      allowDecimals={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                      }}
+                      labelStyle={{ color: "hsl(var(--foreground))", fontWeight: 600 }}
+                      formatter={(value: number) => [`${value} acesso${value !== 1 ? "s" : ""}`, "Acessos"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="acessos"
+                      stroke="hsl(var(--accent))"
+                      strokeWidth={2.5}
+                      fill="url(#colorAcessos)"
+                      dot={{ r: 3, fill: "hsl(var(--accent))", strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: "hsl(var(--accent))", strokeWidth: 2, stroke: "hsl(var(--card))" }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+
+              <p className="text-xs text-muted-foreground text-center">
+                {chartData[6]?.acessos > 0
+                  ? `🔥 Você acessou ${chartData[6].acessos}x hoje!`
+                  : "Acesse o app para registrar seu progresso!"}
+              </p>
             </div>
           </div>
         </div>
