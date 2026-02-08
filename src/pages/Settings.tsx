@@ -44,6 +44,9 @@ const Settings = () => {
   const [isChangingEmail, setIsChangingEmail] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [isSavingName, setIsSavingName] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -81,6 +84,7 @@ const Settings = () => {
         }
         setUser(session.user);
         setAvatarUrl(session.user.user_metadata?.avatar_url || null);
+        setDisplayName(session.user.user_metadata?.full_name || "");
         await checkSubscription(session.access_token);
       } catch (error) {
         console.error("Erro ao iniciar auth:", error);
@@ -262,6 +266,31 @@ const Settings = () => {
       }
     } finally {
       setIsChangingEmail(false);
+    }
+  };
+
+  const handleSaveDisplayName = async () => {
+    const trimmed = displayName.trim();
+    if (trimmed.length > 100) {
+      toast.error("O nome deve ter no máximo 100 caracteres");
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: trimmed },
+      });
+
+      if (error) throw error;
+
+      toast.success("Nome atualizado com sucesso!");
+      setIsEditingName(false);
+    } catch (error) {
+      console.error("Erro ao atualizar nome:", error);
+      toast.error("Erro ao atualizar nome. Tente novamente.");
+    } finally {
+      setIsSavingName(false);
     }
   };
 
@@ -454,8 +483,57 @@ const Settings = () => {
               <p className="text-foreground">{user?.email}</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-muted-foreground">Nome</label>
-              <p className="text-foreground">{user?.user_metadata?.full_name || "Não informado"}</p>
+              <label className="text-sm font-medium text-muted-foreground">Nome de exibição</label>
+              {isEditingName ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Input
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    placeholder="Seu nome"
+                    maxLength={100}
+                    disabled={isSavingName}
+                    className="flex-1"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveDisplayName();
+                      if (e.key === "Escape") {
+                        setDisplayName(user?.user_metadata?.full_name || "");
+                        setIsEditingName(false);
+                      }
+                    }}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleSaveDisplayName}
+                    disabled={isSavingName}
+                  >
+                    {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : "Salvar"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setDisplayName(user?.user_metadata?.full_name || "");
+                      setIsEditingName(false);
+                    }}
+                    disabled={isSavingName}
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <p className="text-foreground">{user?.user_metadata?.full_name || "Não informado"}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setIsEditingName(true)}
+                  >
+                    Editar
+                  </Button>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-muted-foreground">Conta criada em</label>
