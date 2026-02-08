@@ -57,6 +57,40 @@ const ENEM_TOPICS = [
   { subject: "Física", topic: "Óptica e Ondas", icon: "🌊", tip: "Revise reflexão, refração, difração e propriedades das ondas." },
 ];
 
+const MOTIVATIONAL_QUOTES = [
+  { quote: "A consistência é mais importante que a perfeição.", author: "Provérbio" },
+  { quote: "O segredo do sucesso é começar antes de estar pronto.", author: "Marie Forleo" },
+  { quote: "Não importa o quão devagar você vá, desde que não pare.", author: "Confúcio" },
+  { quote: "Estudar não é um fardo, é a chave para a liberdade.", author: "Anônimo" },
+  { quote: "O único lugar onde o sucesso vem antes do trabalho é no dicionário.", author: "Albert Einstein" },
+  { quote: "Disciplina é a ponte entre metas e conquistas.", author: "Jim Rohn" },
+  { quote: "Acredite que você pode, e você já está no meio do caminho.", author: "Theodore Roosevelt" },
+  { quote: "Todo expert já foi um iniciante.", author: "Helen Hayes" },
+  { quote: "A educação é a arma mais poderosa para mudar o mundo.", author: "Nelson Mandela" },
+  { quote: "Você não precisa ser perfeito para começar, mas precisa começar para ser perfeito.", author: "Zig Ziglar" },
+  { quote: "Grandes conquistas são feitas por quem ousa começar.", author: "Anônimo" },
+  { quote: "O esforço de hoje é o resultado de amanhã.", author: "Provérbio" },
+  { quote: "Sua única limitação é aquela que você impõe a si mesmo.", author: "Napoleon Hill" },
+  { quote: "A persistência é o caminho do êxito.", author: "Charles Chaplin" },
+  { quote: "O conhecimento é o único bem que ninguém pode tirar de você.", author: "Benjamin Franklin" },
+  { quote: "Cada dia é uma nova chance de fazer melhor.", author: "Anônimo" },
+  { quote: "Sonhos determinam o que você quer. Ação determina o que você conquista.", author: "Aldo Novak" },
+  { quote: "O futuro pertence àqueles que acreditam na beleza de seus sonhos.", author: "Eleanor Roosevelt" },
+  { quote: "Não espere por oportunidades. Crie-as.", author: "George Bernard Shaw" },
+  { quote: "A dor do estudo é temporária. A dor da ignorância é permanente.", author: "Anônimo" },
+  { quote: "Faça o que puder, com o que tiver, onde estiver.", author: "Theodore Roosevelt" },
+  { quote: "O sucesso nasce do querer. Sempre que o homem aplicar determinação, ele fará.", author: "José de Alencar" },
+  { quote: "Inteligência sem ambição é como um pássaro sem asas.", author: "Salvador Dalí" },
+  { quote: "Nunca é tarde demais para ser aquilo que sempre desejou.", author: "George Eliot" },
+  { quote: "O estudo é a luz que ilumina os caminhos da vida.", author: "Anônimo" },
+  { quote: "Quem não luta pelo futuro que quer, deve aceitar o futuro que vier.", author: "Anônimo" },
+  { quote: "A vontade de se preparar precisa ser maior que a vontade de vencer.", author: "Bobby Knight" },
+  { quote: "Plante hoje as sementes que colherá amanhã.", author: "Og Mandino" },
+  { quote: "O impossível é apenas o que ainda não foi tentado.", author: "Anônimo" },
+  { quote: "Suas escolhas de hoje moldam o seu amanhã.", author: "Provérbio" },
+  { quote: "Aprender é a única coisa que a mente nunca se cansa.", author: "Leonardo da Vinci" },
+];
+
 const PLATFORM_FEATURES = [
   { icon: PenTool, label: "Correção de Redação", desc: "Feedback detalhado com IA" },
   { icon: Brain, label: "Chat AprovI.A", desc: "Tire dúvidas 24/7" },
@@ -73,12 +107,12 @@ function getGreeting(): string {
   return "Boa noite";
 }
 
-function getDailyTopic() {
+function getDailyItem<T>(items: T[]): T {
   const now = new Date();
   const start = new Date(now.getFullYear(), 0, 0);
   const diff = now.getTime() - start.getTime();
   const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return ENEM_TOPICS[dayOfYear % ENEM_TOPICS.length];
+  return items[dayOfYear % items.length];
 }
 
 function getUserName(user: any): string {
@@ -98,7 +132,8 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
   const navigate = useNavigate();
   const { resolvedTheme, setTheme } = useTheme();
   const greeting = getGreeting();
-  const dailyTopic = getDailyTopic();
+  const dailyTopic = getDailyItem(ENEM_TOPICS);
+  const dailyQuote = getDailyItem(MOTIVATIONAL_QUOTES);
   const userName = getUserName(user);
   const avatarUrl = getUserAvatar(user);
   const firstName = userName.split(" ")[0];
@@ -349,13 +384,17 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
           </Button>
         </div>
 
-        {/* Motivational */}
-        <div className="text-center py-6 space-y-2">
-          <p className="text-muted-foreground italic text-lg">
-            "A consistência é mais importante que a perfeição."
+        {/* Motivational Quote of the Day */}
+        <div className="text-center py-8 space-y-3 rounded-2xl bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/10 px-6">
+          <Sparkles className="w-6 h-6 text-primary mx-auto" />
+          <p className="text-foreground italic text-lg md:text-xl font-medium leading-relaxed max-w-2xl mx-auto">
+            "{dailyQuote.quote}"
           </p>
-          <p className="text-sm text-muted-foreground">
-            Continue estudando um pouco todos os dias — cada minuto conta! 🚀
+          <p className="text-sm text-muted-foreground font-medium">
+            — {dailyQuote.author}
+          </p>
+          <p className="text-xs text-muted-foreground pt-1">
+            ✨ Frase motivacional do dia — volte amanhã para uma nova!
           </p>
         </div>
       </section>
