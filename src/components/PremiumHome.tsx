@@ -1,8 +1,9 @@
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Rocket, Settings, LogOut, MessageSquare, User, BookOpen, Brain,
   Sparkles, ChevronRight, LayoutDashboard, Zap, Star, Shield,
-  CheckCircle2, FileText, GraduationCap, Timer, PenTool, Moon, Sun,
+  CheckCircle2, FileText, GraduationCap, Timer, PenTool, Moon, Sun, Flame,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -138,6 +139,79 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
   const avatarUrl = getUserAvatar(user);
   const firstName = userName.split(" ")[0];
 
+  // Streak fire system
+  const todayKey = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  const [fireActive, setFireActive] = useState(false);
+  const [justActivated, setJustActivated] = useState(false);
+  const [streakDays, setStreakDays] = useState(0);
+
+  useEffect(() => {
+    const storedDate = localStorage.getItem("aprovia_fire_date");
+    const storedStreak = parseInt(localStorage.getItem("aprovia_fire_streak") || "0", 10);
+    
+    if (storedDate === todayKey) {
+      setFireActive(true);
+      setStreakDays(storedStreak);
+    } else {
+      // Check if yesterday was active to maintain streak
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayKey = yesterday.toISOString().split("T")[0];
+      
+      if (storedDate === yesterdayKey) {
+        setStreakDays(storedStreak); // Streak continues but not yet activated today
+      } else {
+        setStreakDays(0); // Streak broken
+        localStorage.setItem("aprovia_fire_streak", "0");
+      }
+      setFireActive(false);
+    }
+  }, [todayKey]);
+
+  const activateFire = useCallback(() => {
+    if (fireActive) return;
+    
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKey = yesterday.toISOString().split("T")[0];
+    const storedDate = localStorage.getItem("aprovia_fire_date");
+    const storedStreak = parseInt(localStorage.getItem("aprovia_fire_streak") || "0", 10);
+    
+    let newStreak = 1;
+    if (storedDate === yesterdayKey) {
+      newStreak = storedStreak + 1;
+    }
+    
+    localStorage.setItem("aprovia_fire_date", todayKey);
+    localStorage.setItem("aprovia_fire_streak", String(newStreak));
+    setFireActive(true);
+    setStreakDays(newStreak);
+    setJustActivated(true);
+    
+    // Remove animation class after it plays
+    setTimeout(() => setJustActivated(false), 1500);
+  }, [fireActive, todayKey]);
+
+  const handleAppClick = () => {
+    activateFire();
+  };
+
+  // Listen for returning focus (user came back from app)
+  useEffect(() => {
+    const onFocus = () => {
+      const storedDate = localStorage.getItem("aprovia_fire_date");
+      if (storedDate === todayKey && !fireActive) {
+        setFireActive(true);
+        setJustActivated(true);
+        const storedStreak = parseInt(localStorage.getItem("aprovia_fire_streak") || "0", 10);
+        setStreakDays(storedStreak);
+        setTimeout(() => setJustActivated(false), 1500);
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [todayKey, fireActive]);
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -223,6 +297,26 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
 
           {/* Right side */}
           <div className="flex items-center gap-2">
+            {/* Fire Streak */}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all duration-500 ${
+              fireActive
+                ? "bg-orange-500/10 border-orange-400/30 shadow-sm shadow-orange-500/10"
+                : "bg-muted/50 border-border"
+            } ${justActivated ? "animate-scale-in" : ""}`}>
+              <Flame
+                className={`w-5 h-5 transition-all duration-500 ${
+                  fireActive
+                    ? "text-orange-500 drop-shadow-[0_0_6px_rgba(249,115,22,0.5)]"
+                    : "text-muted-foreground/40"
+                } ${justActivated ? "animate-bounce" : ""}`}
+                fill={fireActive ? "currentColor" : "none"}
+              />
+              <span className={`text-sm font-bold tabular-nums transition-colors duration-500 ${
+                fireActive ? "text-orange-500" : "text-muted-foreground/40"
+              }`}>
+                {streakDays}
+              </span>
+            </div>
             <SupportChat />
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
               {resolvedTheme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -275,7 +369,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
                 className="text-lg md:text-xl px-12 md:px-16 py-7 md:py-8 shadow-2xl hover:shadow-primary/30 hover:scale-105 transition-all bg-gradient-to-r from-primary via-primary to-primary/90 relative group font-bold"
                 asChild
               >
-                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
+                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer" onClick={handleAppClick}>
                   <Rocket className="mr-3 h-6 w-6 group-hover:animate-bounce" />
                   ENTRAR NO APLICATIVO
                   <ChevronRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -327,7 +421,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
             </p>
             <div className="pl-[4.5rem]">
               <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg" asChild>
-                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
+                <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer" onClick={handleAppClick}>
                   <BookOpen className="w-4 h-4" />
                   Estudar este tema agora
                 </a>
@@ -348,6 +442,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
                 href="https://aproviaapp.lovable.app"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={handleAppClick}
                 className="group text-center p-5 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-md hover:shadow-lg hover:border-primary/30 hover:scale-[1.02] transition-all"
               >
                 <feature.icon className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
@@ -365,7 +460,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
             className="w-full py-6 gap-3 bg-gradient-to-r from-primary via-primary to-primary/90 shadow-lg hover:shadow-xl font-bold"
             asChild
           >
-            <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
+            <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer" onClick={handleAppClick}>
               <Rocket className="w-5 h-5" />
               Abrir App
             </a>
