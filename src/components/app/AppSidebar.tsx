@@ -1,35 +1,23 @@
 import {
-  Home,
-  FileText,
-  BookOpen,
-  PenTool,
-  MessageCircle,
-  Lightbulb,
-  Timer,
-  HelpCircle,
-  ClipboardList,
-  FolderDown,
-  GraduationCap,
-  Trophy,
-  Search,
-  Brain,
-  Calendar,
+  Home, FileText, BookOpen, PenTool, MessageCircle, Lightbulb,
+  ExternalLink, Timer, HelpCircle, ClipboardList, FolderDown,
+  GraduationCap, Trophy, Search, Calendar
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
+import { NavLink } from "react-router-dom";
+import { ThemeToggle } from "./ThemeToggle";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
+  SidebarTrigger,
+  useSidebar,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
 } from "@/components/ui/sidebar";
-import { ThemeToggle } from "./ThemeToggle";
 
 const mainItems = [
   { title: "Início", url: "/app", icon: Home },
@@ -54,75 +42,101 @@ const practiceItems = [
   { title: "Consultar Curso", url: "/app/consultar-curso", icon: Search },
 ];
 
-const SidebarSection = ({ label, items }: { label: string; items: typeof mainItems }) => {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-
+function NavItem({ item }: { item: { title: string; url: string; icon: React.ComponentType<{ className?: string }> } }) {
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel className="text-primary/70 font-semibold uppercase text-[11px] tracking-wider">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {items.map((item) => (
-            <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild tooltip={item.title}>
-                <NavLink
-                  to={item.url}
-                  end={item.url === "/app"}
-                  className="text-primary hover:bg-primary/10 transition-colors"
-                  activeClassName="!bg-primary !text-primary-foreground font-semibold"
-                >
-                  <item.icon className="h-4 w-4" />
-                  <span>{item.title}</span>
-                </NavLink>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          ))}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
+    <SidebarMenuItem>
+      <NavLink
+        to={item.url}
+        end={item.url === "/app"}
+        className={({ isActive }) =>
+          `flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 no-underline ${
+            isActive
+              ? "bg-primary text-primary-foreground shadow-md font-semibold"
+              : "text-primary hover:bg-primary/10"
+          }`
+        }
+      >
+        <item.icon className="w-4 h-4" />
+        {item.title}
+      </NavLink>
+    </SidebarMenuItem>
   );
-};
+}
 
 export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+  const { open } = useSidebar();
+  const isMobile = useIsMobile();
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary text-primary-foreground">
-            <Brain className="h-5 w-5" />
+        <div className="flex items-center gap-3 px-3 py-4">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-lg">✦</span>
           </div>
-          {!collapsed && (
-            <div>
-              <h2 className="font-bold text-primary leading-none">AprovI.A</h2>
-              <p className="text-xs text-muted-foreground">Assistente ENEM</p>
-            </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-lg tracking-tight">AprovI.A</span>
+            <span className="text-xs text-muted-foreground">Assistente ENEM</span>
+          </div>
+          {isMobile && (
+            <SidebarTrigger />
           )}
         </div>
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarSection label="Principal" items={mainItems} />
-        <SidebarSection label="Estudos" items={studyItems} />
-        <SidebarSection label="Praticar" items={practiceItems} />
+        <SidebarGroup>
+          <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Principal
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {mainItems.map((item) => (
+                <NavItem key={item.title} item={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Estudos
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {studyItems.map((item) => (
+                <NavItem key={item.title} item={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <div className="px-3 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Praticar
+          </div>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {practiceItems.map((item) => (
+                <NavItem key={item.title} item={item} />
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="flex items-center justify-between px-3 py-2">
+        <div className="px-3 py-2">
           <ThemeToggle />
-          {!collapsed && (
-            <NavLink
-              to="/"
-              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← Página Inicial
-            </NavLink>
-          )}
+        </div>
+        <div className="px-3 py-2">
+          <a
+            href="/"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Página Inicial
+          </a>
         </div>
       </SidebarFooter>
     </Sidebar>
