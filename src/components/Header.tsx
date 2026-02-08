@@ -215,13 +215,13 @@ const Header = () => {
 
         {hasSubscription ? (
           <Button size="sm" className="gap-2 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-xl transition-all relative" asChild>
-            <a href="https://aproviaapp.lovable.app" target="_blank" rel="noopener noreferrer">
+            <Link to="/app">
               <span className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
                 PRO
               </span>
               <Rocket className="w-4 h-4" />
               <span className="hidden sm:inline">Entrar no App</span>
-            </a>
+            </Link>
           </Button>
         ) : (
           <Button size="sm" variant="outline" className="gap-2 border-primary/50 text-primary hover:bg-primary/10 relative group" asChild>
