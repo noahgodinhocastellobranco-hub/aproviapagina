@@ -47,7 +47,7 @@ const Hero = () => {
     if (!user) {
       navigate("/auth");
     } else if (hasSubscription) {
-      window.open("https://aproviaapp.lovable.app", "_blank");
+      navigate("/app");
     } else {
       navigate("/pricing");
     }

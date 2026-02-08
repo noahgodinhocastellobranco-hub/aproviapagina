@@ -119,14 +119,10 @@ const Success = () => {
 
             <div className="flex flex-col gap-3">
               <Button size="lg" className="w-full gap-2 shadow-lg" asChild>
-                <a
-                  href="https://aprovia.lovable.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
+                <Link to="/app">
                   <Rocket className="w-5 h-5" />
                   Entrar no Aplicativo
-                </a>
+                </Link>
               </Button>
 
               <Button variant="outline" size="lg" className="w-full gap-2" asChild>
