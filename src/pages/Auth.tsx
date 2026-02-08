@@ -116,7 +116,7 @@ const Auth = () => {
 
     setFormError(null);
 
-    if (!email || !password || (!isLogin && !fullName)) {
+    if (!email || !password || !fullName) {
       const msg = "Preencha todos os campos";
       setFormError(msg);
       toast.error(msg);
@@ -126,7 +126,7 @@ const Auth = () => {
     try {
       emailSchema.parse(email);
       passwordSchema.parse(password);
-      if (!isLogin) nameSchema.parse(fullName);
+      nameSchema.parse(fullName);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         const msg = error.errors[0].message;
@@ -142,6 +142,8 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // Atualizar nome nos metadados ao fazer login
+        await supabase.auth.updateUser({ data: { full_name: fullName } });
         toast.success("Login realizado!");
       } else {
         const { data, error } = await supabase.auth.signUp({
@@ -307,8 +309,7 @@ const Auth = () => {
               )}
 
               <form onSubmit={handleAuth} className="space-y-5">
-                {!isLogin && (
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <label htmlFor="fullName" className="text-sm font-medium flex items-center gap-2">
                       <User className="w-4 h-4 text-muted-foreground" />
                       Nome Completo
@@ -320,11 +321,10 @@ const Auth = () => {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       disabled={isLoading}
-                      required={!isLogin}
+                      required
                       className="h-12 bg-background/50 border-border/50 focus:border-primary transition-colors"
                     />
                   </div>
-                )}
 
                 <div className="space-y-2">
                   <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
