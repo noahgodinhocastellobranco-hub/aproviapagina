@@ -252,6 +252,7 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
   const handleAppClick = () => {
     activateFire();
     recordVisit();
+    toast.info("App em desenvolvimento! Em breve estará disponível.");
   };
 
   // Listen for returning focus (user came back from app)
@@ -427,11 +428,11 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
                 className="text-lg md:text-xl px-12 md:px-16 py-7 md:py-8 shadow-2xl hover:shadow-primary/30 hover:scale-105 transition-all bg-gradient-to-r from-primary via-primary to-primary/90 relative group font-bold"
                 asChild
               >
-                <Link to="/app" onClick={handleAppClick}>
+                <button onClick={handleAppClick}>
                   <Rocket className="mr-3 h-6 w-6 group-hover:animate-bounce" />
                   COMECE A ESTUDAR
                   <ChevronRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </button>
               </Button>
             </div>
 
@@ -516,11 +517,9 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
                 💡 <strong>Dica:</strong> {dailyTopic.tip}
               </p>
               <div className="pl-[4.5rem]">
-                <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg" asChild>
-                  <Link to="/app" onClick={handleAppClick}>
+                <Button className="gap-2 bg-gradient-to-r from-primary to-primary/80 shadow-md hover:shadow-lg" onClick={handleAppClick}>
                     <BookOpen className="w-4 h-4" />
                     Estudar este tema agora
-                  </Link>
                 </Button>
               </div>
             </div>
@@ -606,16 +605,15 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
           </h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {PLATFORM_FEATURES.map((feature) => (
-              <Link
+              <button
                 key={feature.label}
-                to="/app"
                 onClick={handleAppClick}
                 className="group text-center p-5 rounded-2xl bg-gradient-to-br from-card to-primary/5 border-2 border-primary/10 shadow-md hover:shadow-lg hover:border-primary/30 hover:scale-[1.02] transition-all"
               >
                 <feature.icon className="w-8 h-8 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
                 <div className="text-sm font-bold text-foreground">{feature.label}</div>
                 <div className="text-xs text-muted-foreground mt-1">{feature.desc}</div>
-              </Link>
+              </button>
             ))}
           </div>
         </div>
@@ -625,12 +623,10 @@ const PremiumHome = ({ user, isAdmin }: PremiumHomeProps) => {
           <Button
             size="lg"
             className="w-full py-6 gap-3 bg-gradient-to-r from-primary via-primary to-primary/90 shadow-lg hover:shadow-xl font-bold"
-            asChild
+            onClick={handleAppClick}
           >
-            <Link to="/app" onClick={handleAppClick}>
-              <Rocket className="w-5 h-5" />
-              Comece a Estudar
-            </Link>
+            <Rocket className="w-5 h-5" />
+            Comece a Estudar
           </Button>
           <Button size="lg" variant="outline" className="w-full py-6 gap-3 border-2" asChild>
             <Link to="/settings">
